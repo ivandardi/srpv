@@ -49,12 +49,7 @@ AP3P = (AREA_AVERAGE_PLATE_3 + AREA_STDEV_PLATE_3)  # * 1.5
 
 class RegionSegmentation:
     def __init__(self, img_path, dst_path):
-        self.path = img_path
-        self.dst = dst_path
-        self.img_name = img_path[-7:-4]
-        self.img = io.imread(self.path)
-        h, w = self.img.shape[:2]
-        self.img = img_as_float(self.img[600:h, w / 4:3 * w / 4])
+        pass
 
     def run(self):
         print("Running region segmentation")
