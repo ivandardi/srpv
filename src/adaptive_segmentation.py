@@ -2,8 +2,8 @@ from skimage import io
 from skimage.exposure import equalize_adapthist
 from skimage.segmentation import mark_boundaries, slic
 from skimage.util import img_as_float
-
 from srpv_base import srpv
+from constants import *
 
 
 class AdaptiveSegmentation(srpv):
