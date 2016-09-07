@@ -1,3 +1,4 @@
+cd build
 ./main 001
 ./main 002
 ./main 003
@@ -31,3 +32,4 @@
 ./main 031
 ./main 032
 ./main 033
+cd ..

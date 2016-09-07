@@ -1,3 +1,0 @@
-/media/sf_srpv/Analises/cmaketest/CMakeFiles/rebuild_cache.dir
-/media/sf_srpv/Analises/cmaketest/CMakeFiles/edit_cache.dir
-/media/sf_srpv/Analises/cmaketest/CMakeFiles/main.dir
