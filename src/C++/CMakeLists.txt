@@ -1,7 +1,0 @@
-cmake_minimum_required(VERSION 2.8)
-project( main )
-find_package( OpenCV REQUIRED )
-SET(CMAKE_CXX_COMPILER "g++-6")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -Wextra")
-add_executable(main src/main.cpp src/utility.cpp src/plateimage.cpp src/binarize_wolf.cpp)
-target_link_libraries( main ${OpenCV_LIBS} )

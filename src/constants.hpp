@@ -1,6 +1,14 @@
-#ifndef MAIN_CONSTANTS_HPP
-#define MAIN_CONSTANTS_HPP
+#pragma once
 
+#include <string>
+#include <opencv2/opencv.hpp>
+
+namespace Path
+{
+extern std::string DST;
+extern std::string SRC;
+extern int image_count;
+}
 
 namespace Color
 {
@@ -22,5 +30,3 @@ constexpr double IDEAL_CHAR_HEIGHT = 79.0;
 constexpr double IDEAL_CHAR_RATIO  = 50.0 / 79.0;
 constexpr double IDEAL_CHARPLATE_RATIO = 5.5;
 }
-
-#endif //MAIN_CONSTANTS_HPP
