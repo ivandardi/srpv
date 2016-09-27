@@ -50,7 +50,7 @@ auto produceThresholds(const cv::Mat& img_gray)
 	return thresholds;
 }
 
-void find_characters(const std::vector<cv::Mat>& thresholds, std::vector<cv::Rect>& chars)
+void find_characters(const std::vector<cv::Mat>& thresholds, std::vector<cv::Rect>& chars, int contour_type, double precision_min, double precision_max)
 {
 	auto elem = cv::getStructuringElement(cv::MORPH_ELLIPSE, {5, 5});
 	for (auto& i : thresholds) {
@@ -61,7 +61,7 @@ void find_characters(const std::vector<cv::Mat>& thresholds, std::vector<cv::Rec
 
 		std::vector<std::vector<cv::Point>> contours;
 		// Try to find contours of the characters
-		cv::findContours(i.clone(), contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+		cv::findContours(i.clone(), contours, contour_type, CV_CHAIN_APPROX_SIMPLE);
 		for (const auto& cnt : contours) {
 			// Get the bounding rectangle for the possible characters
 			auto bounds = cv::boundingRect(cnt);
@@ -71,11 +71,15 @@ void find_characters(const std::vector<cv::Mat>& thresholds, std::vector<cv::Rec
 			double char_precision = actual_char_ratio / Plate::IDEAL_CHAR_RATIO;
 
 			// Check if the found ratio is close to the expected ratio
-			if (0.5 < char_precision && char_precision < 1.25) {
+			if (precision_min < char_precision && char_precision < precision_max) {
 				// It's a character, add it to the character array
 				chars.push_back(bounds);
 			}
 		}
+	}
+
+	if (chars.empty()) {
+		throw std::runtime_error("find_text: no characters found!");
 	}
 	
 }
@@ -255,11 +259,7 @@ cv::Rect find_text(const cv::Mat& image_original, const cv::Mat& image_preproces
 	auto thresholds = produceThresholds(image_preprocessed);
 
 	std::vector<cv::Rect> chars;
-	find_characters(thresholds, chars);
-	
-	if (chars.empty()) {
-		throw std::runtime_error("TextDetector: no characters found!");
-	}
+	find_characters(thresholds, chars, CV_RETR_LIST, 0.5, 1.25);
 
 	filter_small_rects(image_preprocessed, chars, 200, 500);
 
@@ -311,6 +311,9 @@ cv::Rect find_text(const cv::Mat& image_original, const cv::Mat& image_preproces
 			bounding_rects.push_back(chars_filtered[i]);
 		}
 	}
+	if (chars_filtered.back().y - chars_filtered[chars_filtered.size() - 2].y <= minimum_y_distance) {
+		bounding_rects.push_back(chars_filtered.back());
+	}
 
 	if (bounding_rects.empty()) {
 		image_original.copyTo(image_disp);
@@ -347,7 +350,7 @@ cv::Rect find_text(const cv::Mat& image_original, const cv::Mat& image_preproces
 	const double expected_char_width = char_roi.height * Plate::IDEAL_CHARPLATE_RATIO;
 	const double roi_width_diff = expected_char_width - char_roi.width;
 
-	resizeRect(char_roi, {roi_width_diff, char_roi.height * 1.25}, image_preprocessed.size());
+	resizeRect(char_roi, {roi_width_diff * 1.5, char_roi.height * 1.5}, image_preprocessed.size());
 
 	// if (!(0 <= char_roi.x
 	// 	&& 0 <= char_roi.width
@@ -376,7 +379,7 @@ cv::Rect find_text(const cv::Mat& image_original, const cv::Mat& image_preproces
 	return char_roi;
 }
 
-void verify_plate(cv::Rect& char_roi, const cv::Mat& image_preprocessed, const cv::Mat& image_original)
+cv::Mat extract_plate(cv::Rect& char_roi, const cv::Mat& image_preprocessed)
 {
 	cv::Mat image_disp;
 
@@ -401,14 +404,14 @@ void verify_plate(cv::Rect& char_roi, const cv::Mat& image_preprocessed, const c
 	// Separates non-intersecting horizontal lines and vertical lines
 	find_lines(lines, lines_h, lines_v, canny.size());
 
-	image_original.copyTo(image_disp);
+	#ifdef PUDIM
+	image_disp = cv::Mat::zeros(image_preprocessed.size(), CV_8UC3);
+	image_preprocessed.copyTo(image_disp);
 	for (const auto& line : lines_h) {
 		cv::line(image_disp(char_roi), line.p1, line.p2, Color::RED, 3, cv::LINE_AA);
 	}
-	for (const auto& line : lines_v) {
-		cv::line(image_disp(char_roi), line.p1, line.p2, Color::GREEN, 3, cv::LINE_AA);
-	}
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) +  "_10lines.jpg", image_disp);
+	#endif
 
 	if (lines_h.size() < 2) {
 		throw std::runtime_error("No horizontal lines detected!");
@@ -416,34 +419,25 @@ void verify_plate(cv::Rect& char_roi, const cv::Mat& image_preprocessed, const c
 
 	// The horizontal lines are more important
 
-	std::vector<cv::Point> horizontal_points;
-	for (auto&& line : lines_h) {
-		horizontal_points.push_back(line.p1);
-		horizontal_points.push_back(line.p2);
-	}
-
 	// We need to find 4 points to apply a warp
 	std::vector<cv::Point2f> quad_pts; // Actual coordinates
     std::vector<cv::Point2f> squre_pts; //Desired coordinates
 
-    auto point_x_less = [](const cv::Point& lhs, const cv::Point& rhs){
-		return lhs.x < rhs.x;
-	};
-
-	auto point_y_less = [](const cv::Point& lhs, const cv::Point& rhs){
-		return lhs.y < rhs.y;
-	};
-
 	// TODO fix bug: ele esta pegando o retangulo minimo enclosing das linhas
 	// fazer pegar o minimo esquerdo, o maximo esquerdo, e etc
 
-	auto x_minmax = std::minmax_element(begin(horizontal_points), end(horizontal_points), point_x_less);
-	auto y_minmax = std::minmax_element(begin(horizontal_points), end(horizontal_points), point_y_less);
+	auto yl_minmax = std::minmax_element(begin(lines_h), end(lines_h), [](const LineSegment& lhs, const LineSegment& rhs){
+		return lhs.p1.y < rhs.p1.y;
+	});
+	
+	auto yr_minmax = std::minmax_element(begin(lines_h), end(lines_h), [](const LineSegment& lhs, const LineSegment& rhs){
+		return lhs.p2.y < rhs.p2.y;
+	});
 
-	quad_pts.emplace_back(x_minmax.first->x, y_minmax.first->y); // Topleft
-	quad_pts.emplace_back(x_minmax.first->x, y_minmax.second->y); // Bottomleft
-	quad_pts.emplace_back(x_minmax.second->x, y_minmax.first->y); // Topright
-	quad_pts.emplace_back(x_minmax.second->x, y_minmax.second->y); // Bottomright
+	quad_pts.push_back(yl_minmax.first->p1); // Topleft
+	quad_pts.push_back(yl_minmax.second->p1); // Bottomleft
+	quad_pts.push_back(yr_minmax.first->p2); // Topright
+	quad_pts.push_back(yr_minmax.second->p2); // Bottomright
 
 	// Now the desired coords
 
@@ -453,7 +447,9 @@ void verify_plate(cv::Rect& char_roi, const cv::Mat& image_preprocessed, const c
 	squre_pts.emplace_back(desired_width, 0);
 	squre_pts.emplace_back(desired_width, char_roi.height);
 
-	image_original.copyTo(image_disp);
+	#ifdef PUDIM
+	image_disp = cv::Mat::zeros(image_preprocessed.size(), CV_8UC3);
+	image_preprocessed.copyTo(image_disp);
 	cv::line(image_disp(char_roi), quad_pts[0],  quad_pts[1],   Color::RED, 2, cv::LINE_AA);
 	cv::line(image_disp(char_roi), quad_pts[1],  quad_pts[3],   Color::RED, 2, cv::LINE_AA);
 	cv::line(image_disp(char_roi), quad_pts[3],  quad_pts[2],   Color::RED, 2, cv::LINE_AA);
@@ -463,17 +459,49 @@ void verify_plate(cv::Rect& char_roi, const cv::Mat& image_preprocessed, const c
 	cv::line(image_disp(char_roi), squre_pts[3], squre_pts[2], Color::GREEN, 2, cv::LINE_AA);
 	cv::line(image_disp(char_roi), squre_pts[2], squre_pts[0], Color::GREEN, 2, cv::LINE_AA);
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) +  "_11warps.jpg", image_disp);
+	#endif
 
 	cv::Mat image_transformed = cv::Mat::zeros({desired_width, char_roi.height}, image_preprocessed.type());
 	auto transformation = cv::getPerspectiveTransform(quad_pts, squre_pts);
 	cv::warpPerspective(image_preprocessed(char_roi), image_transformed, transformation, image_transformed.size());
+	#ifdef PUDIM
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) +  "_12transformedbefore.jpg", image_preprocessed(char_roi));
+	#endif
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) +  "_13transformedafter.jpg", image_transformed);
+
+	return image_transformed;
+}
+
+void extract_characters(const cv::Mat& img)
+{
+	auto thresholds = produceThresholds(img);
+
+	std::vector<cv::Rect> chars;
+	find_characters(thresholds, chars, CV_RETR_EXTERNAL, 0.75, 1.1);
+
+	if (chars.size() > 15) {
+		throw std::runtime_error("Too many characters!");
+	}
+
+	cv::Mat image_disp = cv::Mat::zeros(img.size(), img.type());
+	for (const auto& r : chars) {
+		cv::rectangle(image_disp, r, Color::WHITE, 1);
+	}
+	cv::imwrite(Path::DST + std::to_string(Path::image_count) +  "_14platechars.jpg", image_disp);
+
+	filter_small_rects(img, chars, 3, 100);
+
+	image_disp = cv::Mat::zeros(img.size(), img.type());
+	for (const auto& r : chars) {
+		cv::rectangle(image_disp, r, Color::WHITE, 1);
+	}
+	cv::imwrite(Path::DST + std::to_string(Path::image_count) +  "_15filteredplatechars.jpg", image_disp);
+
 }
 
 PlateImage::PlateImage(const cv::Mat& img, const std::string& img_name)
 : name(img_name)
-, image_original()
+, image_original(img)
 , image_preprocessed()
 , char_roi()
 {
@@ -482,10 +510,12 @@ PlateImage::PlateImage(const cv::Mat& img, const std::string& img_name)
 	std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
 	
 	++Path::image_count;
-	img.copyTo(image_original);
+
 	preprocess(image_original, image_preprocessed);
 	char_roi = find_text(image_original, image_preprocessed);
-	verify_plate(char_roi, image_preprocessed, image_original);
+	cv::Mat possible_plate = extract_plate(char_roi, image_preprocessed);
+	extract_characters(possible_plate);
+
 
 
     std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
@@ -493,3 +523,4 @@ PlateImage::PlateImage(const cv::Mat& img, const std::string& img_name)
 
     std::cerr <<"Finished in " << time_elapsed.count() << "s\n";
 }
+
