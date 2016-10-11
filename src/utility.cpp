@@ -5,33 +5,10 @@
 #include <cctype>
 #include <cmath>
 
-template<class T, class Compare = std::less<T>>
-constexpr const T& clamp(const T& v, const T& lo, const T& hi, Compare comp = Compare())
-{
-    return assert(!comp(hi, lo)), (comp(v, lo) ? lo : comp(hi, v) ? hi : v);
-}
-
-void resizeRect(cv::Rect& rect, int expandXPixels, int expandYPixels, int maxX,
-                int maxY)
-{
-	double halfX = round(static_cast<double>(expandXPixels) / 2.0);
-	double halfY = round(static_cast<double>(expandYPixels) / 2.0);
-	rect -= cv::Point(halfX, halfY);
-	rect += cv::Size(expandXPixels, expandYPixels);
-
-	rect.x = clamp(rect.x, 0, maxX);
-	rect.y = clamp(rect.y, 0, maxY);
-	if (rect.x + rect.width > maxX) {
-		rect.width = maxX - rect.x;
-	}
-	if (rect.y + rect.height > maxY) {
-		rect.height = maxY - rect.y;
-	}
-}
-
 void resizeRect(cv::Rect& rect, cv::Size expand, cv::Size maxSize)
 {
-	resizeRect(rect, expand.width, expand.height, maxSize.width, maxSize.height);
+	resizeRect(rect, expand.width, expand.height, maxSize.width,
+	           maxSize.height);
 }
 
 void equalizeBrightness(cv::Mat& img)
@@ -47,7 +24,8 @@ void equalizeBrightness(cv::Mat& img)
 	img.convertTo(img, CV_8U); // convert back to unsigned int
 }
 
-void drawRotatedRect(cv::Mat& img, const cv::RotatedRect& rect, const cv::Scalar& color, int thickness)
+void drawRotatedRect(cv::Mat& img, const cv::RotatedRect& rect,
+                     const cv::Scalar& color, int thickness)
 {
 	cv::Point2f rect_points[4];
 	rect.points(rect_points);
@@ -69,7 +47,8 @@ constexpr auto angleBetweenPoints(const cv::Point& p1, const cv::Point& p2)
 	(180 / CV_PI);
 }
 
-auto getSizeMaintainingAspect(const cv::Mat& inputImg, int maxWidth, int maxHeight) -> cv::Size
+auto getSizeMaintainingAspect(const cv::Mat& inputImg, int maxWidth,
+                              int maxHeight) -> cv::Size
 {
 	double aspect =
 	static_cast<double>(inputImg.cols) / static_cast<double>(inputImg.rows);
@@ -108,10 +87,12 @@ LineSegment::LineSegment(const cv::Point& p1, const cv::Point& p2)
 
 LineSegment::LineSegment(int x1, int y1, int x2, int y2)
 : p1(x1, y1)
-, p2(x2, y2)
-, slope((p2.x - p1.x == 0) ? 0.00000000001 : static_cast<double>(p2.y - p1.y) / (p2.x - p1.x))
-, length(distanceBetweenPoints(p1, p2))
-, angle(angleBetweenPoints(p1, p2))
+  , p2(x2, y2)
+  , slope(
+(p2.x - p1.x == 0) ? 0.00000000001 : static_cast<double>(p2.y - p1.y) /
+                                     (p2.x - p1.x))
+  , length(distanceBetweenPoints(p1, p2))
+  , angle(angleBetweenPoints(p1, p2))
 {}
 
 bool LineSegment::isPointBelowLine(const cv::Point& tp) const
@@ -145,7 +126,8 @@ auto LineSegment::closestPointOnSegmentTo(const cv::Point& p) const -> cv::Point
 	return {x, y};
 }
 
-auto LineSegment::intersection(const LineSegment& line, int XBoundary, int YBoundary) const -> cv::Point
+auto LineSegment::intersection(const LineSegment& line, int XBoundary,
+                               int YBoundary) const -> cv::Point
 {
 	double intersection_X = -1, intersection_Y = -1;
 
@@ -168,8 +150,7 @@ auto LineSegment::intersection(const LineSegment& line, int XBoundary, int YBoun
 	}
 
 	if (intersection_X < 0 || intersection_X > XBoundary ||
-	    intersection_Y < 0 || intersection_Y > YBoundary)
-	{
+	    intersection_Y < 0 || intersection_Y > YBoundary) {
 		intersection_X = -1;
 		intersection_Y = -1;
 	}
@@ -207,10 +188,11 @@ auto LineSegment::getParallelLine(double distance) const -> LineSegment
 	int offsetY = static_cast<int>(round(dist_y));
 
 	return {p1.x + offsetX, p1.y + offsetY,
-	                   p2.x + offsetX, p2.y + offsetY};
+	        p2.x + offsetX, p2.y + offsetY};
 }
 
-std::ostream& operator << (std::ostream& out, const LineSegment& line)
+std::ostream& operator<<(std::ostream& out, const LineSegment& line)
 {
-	return out << "LineSegment(" << line.p1.x << ", " << line.p1.y << ") : (" << line.p2.x << ", " << line.p2.y << ")";
+	return out << "LineSegment(" << line.p1.x << ", " << line.p1.y << ") : ("
+	           << line.p2.x << ", " << line.p2.y << ")";
 }

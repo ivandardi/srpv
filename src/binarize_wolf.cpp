@@ -8,7 +8,8 @@ using namespace cv;
 #define fget(x, y)    at<float>(y,x)
 #define fset(x, y, v)  at<float>(y,x)=v;
 
-static double calcLocalStats(Mat& im, Mat& map_m, Mat& map_s, int winx, int winy)
+static double
+calcLocalStats(Mat& im, Mat& map_m, Mat& map_s, int winx, int winy)
 {
 	Mat im_sum, im_sum_sq;
 	cv::integral(im, im_sum, im_sum_sq, CV_64F);
