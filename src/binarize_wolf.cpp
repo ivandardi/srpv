@@ -3,11 +3,6 @@
 using namespace std;
 using namespace cv;
 
-#define uget(x, y)    at<unsigned char>(y,x)
-#define uset(x, y, v)  at<unsigned char>(y,x)=v;
-#define fget(x, y)    at<float>(y,x)
-#define fset(x, y, v)  at<float>(y,x)=v;
-
 static double
 calcLocalStats(Mat& im, Mat& map_m, Mat& map_s, int winx, int winy)
 {
@@ -15,8 +10,8 @@ calcLocalStats(Mat& im, Mat& map_m, Mat& map_s, int winx, int winy)
 	cv::integral(im, im_sum, im_sum_sq, CV_64F);
 
 	double m, s, max_s, sum, sum_sq;
-	int wxh = winx / 2;
-	int wyh = winy / 2;
+	int wxh = winx >> 1;
+	int wyh = winy >> 1;
 	int x_firstth = wxh;
 	int y_lastth = im.rows - wyh - 1;
 	int y_firstth = wyh;
@@ -39,8 +34,8 @@ calcLocalStats(Mat& im, Mat& map_m, Mat& map_s, int winx, int winy)
 		s = sqrt((sum_sq - m * sum) / winarea);
 		if (s > max_s) max_s = s;
 
-		map_m.fset(x_firstth, j, m);
-		map_s.fset(x_firstth, j, s);
+		map_m.at<float>(j, x_firstth) = m;
+		map_s.at<float>(j, x_firstth) = s;
 
 		// Shift the window, add and remove	new/old values to the histogram
 		for (int i = 1; i <= im.cols - winx; i++) {
@@ -68,8 +63,8 @@ calcLocalStats(Mat& im, Mat& map_m, Mat& map_s, int winx, int winy)
 			s = sqrt((sum_sq - m * sum) / winarea);
 			if (s > max_s) max_s = s;
 
-			map_m.fset(i + wxh, j, m);
-			map_s.fset(i + wxh, j, s);
+			map_m.at<float>(j, i + wxh) = m;
+			map_s.at<float>(j, i + wxh) = s;
 		}
 	}
 
@@ -79,18 +74,15 @@ calcLocalStats(Mat& im, Mat& map_m, Mat& map_s, int winx, int winy)
 void NiblackSauvolaWolfJolion(Mat im, Mat output, NiblackVersion version,
                               int winx, int winy, double k, double dR)
 {
-
-
 	double m, s, max_s;
 	double th = 0;
 	double min_I, max_I;
-	int wxh = winx / 2;
-	int wyh = winy / 2;
+	int wxh = winx >> 1;
+	int wyh = winy >> 1;
 	int x_firstth = wxh;
 	int x_lastth = im.cols - wxh - 1;
 	int y_lastth = im.rows - wyh - 1;
 	int y_firstth = wyh;
-	int mx, my;
 
 	// Create local statistics and store them in a double matrices
 	Mat map_m = Mat::zeros(im.rows, im.cols, CV_32F);
@@ -109,82 +101,75 @@ void NiblackSauvolaWolfJolion(Mat im, Mat output, NiblackVersion version,
 		// NORMAL, NON-BORDER AREA IN THE MIDDLE OF THE WINDOW:
 		for (int i = 0; i <= im.cols - winx; i++) {
 
-			m = map_m.fget(i + wxh, j);
-			s = map_s.fget(i + wxh, j);
+			m = map_m.at<float>(j, i + wxh);
+			s = map_s.at<float>(j, i + wxh);
 
 			// Calculate the threshold
 			switch (version) {
-				case NIBLACK:
+				case NiblackVersion::NIBLACK:
 					th = m + k * s;
 					break;
-				case SAUVOLA:
+				case NiblackVersion::SAUVOLA:
 					th = m * (1 + k * (s / dR - 1));
 					break;
-				case WOLFJOLION:
+				case NiblackVersion::WOLFJOLION:
 					th = m + k * (s / max_s - 1) * (m - min_I);
 					break;
-				default:
-					cerr
-					<< "Unknown threshold type in ImageThresholder::surfaceNiblackImproved()\n";
-					exit(1);
 			}
 
-			thsurf.fset(i + wxh, j, th);
+			thsurf.at<float>(j, i + wxh) = th;
 
 			if (i == 0) {
 				// LEFT BORDER
 				for (int i = 0; i <= x_firstth; ++i)
-					thsurf.fset(i, j, th);
+					thsurf.at<float>(j, i) = th;
 
 				// LEFT-UPPER CORNER
 				if (j == y_firstth)
 					for (int u = 0; u < y_firstth; ++u)
 						for (int i = 0; i <= x_firstth; ++i)
-							thsurf.fset(i, u, th);
+							thsurf.at<float>(u, i) = th;
 
 				// LEFT-LOWER CORNER
 				if (j == y_lastth)
 					for (int u = y_lastth + 1; u < im.rows; ++u)
 						for (int i = 0; i <= x_firstth; ++i)
-							thsurf.fset(i, u, th);
+							thsurf.at<float>(u, i) = th;
 			}
 
 			// UPPER BORDER
 			if (j == y_firstth)
 				for (int u = 0; u < y_firstth; ++u)
-					thsurf.fset(i + wxh, u, th);
+					thsurf.at<float>(u, i + wxh) = th;
 
 			// LOWER BORDER
 			if (j == y_lastth)
 				for (int u = y_lastth + 1; u < im.rows; ++u)
-					thsurf.fset(i + wxh, u, th);
+					thsurf.at<float>(u, i + wxh) = th;
 		}
 
 		// RIGHT BORDER
 		for (int i = x_lastth; i < im.cols; ++i)
-			thsurf.fset(i, j, th);
+			thsurf.at<float>(j, i) = th;
 
 		// RIGHT-UPPER CORNER
 		if (j == y_firstth)
 			for (int u = 0; u < y_firstth; ++u)
 				for (int i = x_lastth; i < im.cols; ++i)
-					thsurf.fset(i, u, th);
+					thsurf.at<float>(u, i) = th;
 
 		// RIGHT-LOWER CORNER
 		if (j == y_lastth)
 			for (int u = y_lastth + 1; u < im.rows; ++u)
 				for (int i = x_lastth; i < im.cols; ++i)
-					thsurf.fset(i, u, th);
+					thsurf.at<float>(u, i) = th;
 	}
 
 	for (int y = 0; y < im.rows; ++y) {
 		for (int x = 0; x < im.cols; ++x) {
-			if (im.uget(x, y) >= thsurf.fget(x, y)) {
-				output.uset(x, y, 255);
-			}
-			else {
-				output.uset(x, y, 0);
-			}
+			output.at < unsigned
+			char > (y, x) = (im.at < unsigned
+			char > (y, x) >= thsurf.at<float>(y, x)) ? 255 : 0;
 		}
 	}
 }

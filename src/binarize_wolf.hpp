@@ -4,7 +4,7 @@
 #include <iostream>
 #include "opencv2/opencv.hpp"
 
-enum NiblackVersion {
+enum class NiblackVersion {
 	NIBLACK = 0,
 	SAUVOLA,
 	WOLFJOLION,

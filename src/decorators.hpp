@@ -1,20 +1,21 @@
 #pragma once
-#include <bits/stdc++.h>
+
+#include <chrono>
+#include <ctime>
 
 template<class>
 struct Decorator;
 
-template <class R, class... Args>
-struct Decorator<R(Args ...)>
-{
+template<class R, class... Args>
+struct Decorator<R(Args ...)> {
 	Decorator(const std::string& name, std::function<R(Args ...)> f)
 	: f_(f)
-	, name_(name)
+	  , name_(name)
 	{}
 
 	Decorator(std::string&& name, std::function<R(Args ...)> f)
 	: f_(f)
-	, name_(std::move(name))
+	  , name_(std::move(name))
 	{}
 
 	R operator()(Args ... args)
@@ -27,18 +28,19 @@ struct Decorator<R(Args ...)>
 		return r;
 	}
 
-	std::string name_;
 	std::function<R(Args ...)> f_;
+	std::string name_;
 };
 
 template<class R, class... Args>
-Decorator<R(Args...)> decorator_timer(const std::string& name, R (*f)(Args ...))
+Decorator<R(Args...)>
+decorator_timer(const std::string& name, R (* f)(Args ...))
 {
 	return Decorator<R(Args...)>(name, std::function<R(Args...)>(f));
 }
 
 template<class R, class... Args>
-Decorator<R(Args...)> decorator_timer(std::string&& name, R (*f)(Args ...))
+Decorator<R(Args...)> decorator_timer(std::string&& name, R (* f)(Args ...))
 {
 	return Decorator<R(Args...)>(std::move(name), std::function<R(Args...)>(f));
 }

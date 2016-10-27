@@ -66,7 +66,7 @@ int main(int argc, char** argv)
 
 	Path::SRC = argv[1];
 	Path::DST = argv[2];
-	size_t frames_begin = (argc < 3) ? 0 : std::stoull(argv[3]);
+	size_t frames_begin = (argc < 3) ? 0 : std::stoi(argv[3]);
 	size_t frames_end = (argc < 4) ? std::numeric_limits<int>::max()
 	                               : std::stoull(argv[4]);
 
