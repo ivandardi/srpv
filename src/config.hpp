@@ -1,11 +1,31 @@
+#pragma once
+
 #include "json.hpp"
 #include <fstream>
 
 using json = nlohmann::json;
 
-json& config()
+class Config
 {
-	static std::ifstream cfg_file("config.json");
-	static json cfg(cfg_file);
-	return cfg;
-}
+
+public:
+
+	static Config& instance();
+
+	Config(const Config&) = delete;
+
+	Config(Config&&) = delete;
+
+	Config& operator=(const Config&) = delete;
+
+	Config& operator=(Config&&) = delete;
+
+private:
+
+	Config();
+
+};
+
+
+
+

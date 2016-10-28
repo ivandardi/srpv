@@ -218,8 +218,8 @@ namespace
 	void
 	filter_small_rects(std::vector<cv::Rect>& chars,
 	                   const cv::Size& image_size,
-	                   int edge_distance = 100,
-	                   int min_area = 400)
+	                   int edge_distance,
+	                   int min_area)
 	{
 		// Filter the rectangles by removing the ones touching the edges.
 		cv::Rect border_rect({0, 0}, image_size);
@@ -287,17 +287,44 @@ namespace
 		chars = std::move(bounding_rects);
 	}
 
+	/**
+	 * Naive O(n^2) solution for closest pair of points problem.
+	 * Assumes that the points are sorted on their x coordinate.
+	 */
+	template<typename InputIt>
+	std::pair<InputIt, InputIt> closest_points(InputIt first, InputIt last)
+	{
+		int min_dist = std::numeric_limits<int>::max();
+		std::pair<InputIt, InputIt> closest_pair;
+		for (; first != std::prev(last); ++first){
+			for (InputIt j = first + 1; j != last; ++j) {
+				auto dist = distanceBetweenPoints(*first, *j);
+				if (dist < min_dist) {
+					min_dist = dist;
+					closest_pair = std::make_pair(first, j);
+				}
+			}
+		}
+		return closest_pair;
+	}
+
 	void filter_proximity(std::vector<cv::Rect>& chars)
 	{
-
-		std::sort(begin(chars), end(chars), [](const cv::Rect& a, const cv::Rect& b){
-			return (a.y < b.y) ? true : (a.x < b.x);
-		});
 
 		std::vector<cv::Point> centers;
 		for (auto const& i : chars) {
 			centers.push_back(rect_center(i));
 		}
+
+		std::sort(begin(centers), end(centers), [](const cv::Point& a, cv::Point& b){
+			return a.x < b.x;
+		});
+
+		int clusterCount = 15;
+		Mat labels;
+		int attempts = 5;
+		Mat centers;
+		auto closest_pair = closest_points(cbegin(centers), cend(centers));
 
 #ifdef PUDIM
 		cv::Mat image_disp =
@@ -340,33 +367,6 @@ namespace
 
 	}
 
-#if 0
-	cv::Rect
-		minimum_bounding_rectangle(const std::vector<cv::Rect> &chars,
-								   cv::Size &&max_size)
-	{
-		cv::Rect char_roi = std::accumulate(begin(chars), end(chars), chars.front(),
-											std::bit_or<cv::Rect>());
-
-		// Check if the ratio is close to a plate's
-		if (char_roi.width < char_roi.height) {
-			throw std::runtime_error(
-				"minimum_bounding_rectangle: Final character region doesn't "
-				"resemble a "
-				"plate!");
-		}
-
-		// Expand region
-		const double expected_char_width =
-			char_roi.height * Plate::IDEAL_CHARPLATE_RATIO;
-		const int roi_width_diff = expected_char_width - char_roi.width;
-
-		resizeRect(char_roi, {roi_width_diff, char_roi.height}, max_size);
-
-		return char_roi;
-	}
-#endif
-
 	cv::Mat
 	unwarp_characters(const cv::Mat& image_preprocessed,
 	                  std::vector<cv::Rect>& chars)
@@ -402,81 +402,7 @@ namespace
 		return image_transformed;
 	}
 
-/**
- *
- *
- *
- */
-	template<typename T, typename U, typename V>
-	void
-	find_lines(const T& lines,
-	           std::vector<U>& lines_h,
-	           std::vector<U>& lines_v,
-	           const V& max_size)
-	{
-		// Top of image
-		LineSegment top(0, 0, max_size.width, 0);
 
-		// Bottom of image
-		LineSegment bottom(0, max_size.height, max_size.width, max_size.height);
-
-		for (const auto& line : lines) {
-			float rho = line[0];
-			float theta = line[1];
-
-			double a = cos(theta);
-			double b = sin(theta);
-			double x0 = a * rho;
-			double y0 = b * rho;
-
-			cv::Point pt1, pt2;
-			pt1.x = cvRound(x0 + 1000 * -b);
-			pt1.y = cvRound(y0 + 1000 * a);
-			pt2.x = cvRound(x0 - 1000 * -b);
-			pt2.y = cvRound(y0 - 1000 * a);
-
-			auto line_intersects_with = [](const LineSegment& ins) {
-				return [&ins](const LineSegment& ln) {
-					return ins.intersection(ln) != cv::Point(-1, -1);
-				};
-			};
-
-			const double angle = theta * (180 / CV_PI);
-			if (angle < 5 || angle > 175) {
-				// good vertical
-
-				LineSegment line;
-				if (pt1.y <= pt2.y)
-					line = LineSegment(pt2.x, pt2.y, pt1.x, pt1.y);
-				else
-					line = LineSegment(pt1.x, pt1.y, pt2.x, pt2.y);
-
-				LineSegment ins(line.intersection(bottom),
-				                line.intersection(top));
-				if (!std::any_of(begin(lines_v), end(lines_v),
-				                 line_intersects_with(ins))) {
-					lines_v.push_back(ins);
-				}
-			} else if (80 < angle && angle < 100) {
-				// good horizontal
-
-				LineSegment line;
-				if (pt1.x <= pt2.x)
-					line = LineSegment(pt1.x, pt1.y, pt2.x, pt2.y);
-				else
-					line = LineSegment(pt2.x, pt2.y, pt1.x, pt1.y);
-
-				int newY1 = line.getPointAt(0);
-				int newY2 = line.getPointAt(max_size.width);
-
-				LineSegment ins(0, newY1, max_size.width, newY2);
-				if (!std::any_of(begin(lines_h), end(lines_h),
-				                 line_intersects_with(ins))) {
-					lines_h.push_back(ins);
-				}
-			}
-		}
-	}
 }
 
 /**
@@ -491,9 +417,6 @@ preprocess(const cv::Mat& image_original, cv::Mat& image_preprocessed)
 	// be
 	// image_original({image_original.cols / 4, 600, image_original.cols / 2,
 	//                image_original.rows - 600}).copyTo(temp);
-
-	// Resize images to half
-	// cv::resize(image_original, temp, {}, 0.5, 0.5);
 
 	cv::Mat temp;
 
@@ -521,7 +444,7 @@ preprocess(const cv::Mat& image_original, cv::Mat& image_preprocessed)
 cv::Mat
 find_text(const cv::Mat& image_preprocessed)
 {
-	cv::Mat image_disp;
+	Congif& cfg = Config::instance();
 
 	auto thresholds = produceThresholds(image_preprocessed);
 
@@ -538,106 +461,6 @@ find_text(const cv::Mat& image_preprocessed)
 	return unwarp_characters(image_preprocessed, chars);
 }
 
-/**
- *
- *
- *
- */
-cv::Mat
-extract_plate(const cv::Mat& roi,
-              cv::Rect& char_roi,
-              const cv::Mat& image_preprocessed_debug)
-{
-	cv::Mat image_disp;
-
-	// Apply Canny with parameters that are pretty good
-	// TODO: achar parametros de novo
-	cv::Mat canny;
-	cv::Canny(roi, canny, 135, 500);
-
-#ifdef PUDIM
-	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-	            std::to_string(hahaha++) + "canny.jpg",
-	            canny);
-#endif
-
-	// Detecting the lines of the shapes, separating them into horizontal and
-	// vertical
-	std::vector<cv::Vec2f> lines;
-	std::vector<LineSegment> lines_h;
-	std::vector<LineSegment> lines_v;
-	cv::HoughLines(canny, lines, 1, CV_PI / 180, 100, 0, 0);
-
-	// Separates non-intersecting horizontal lines and vertical lines
-	find_lines(lines, lines_h, lines_v, canny.size());
-
-	if (lines_h.size() < 2) {
-		throw std::runtime_error(
-		"extract_plate: No horizontal lines detected!");
-	}
-
-#ifdef PUDIM
-	image_disp = cv::Mat::zeros(image_preprocessed_debug.size(), CV_8UC3);
-	image_preprocessed_debug.copyTo(image_disp);
-	for (const auto& line : lines_h) {
-		cv::line(image_disp(char_roi), line.p1, line.p2, Color::RED, 3,
-		         cv::LINE_AA);
-	}
-	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-	            std::to_string(hahaha++) + "lines.jpg",
-	            image_disp);
-#endif
-
-	// The horizontal lines are more important
-
-	// We need to find 4 points to apply a warp
-	std::vector<cv::Point2f> quad_pts;  // Actual coordinates
-	std::vector<cv::Point2f> squre_pts; // Desired coordinates
-
-	// TODO fix bug: ele esta pegando o retangulo minimo enclosing das linhas
-	// fazer pegar o minimo esquerdo, o maximo esquerdo, e etc
-
-	auto yl_minmax =
-	std::minmax_element(begin(lines_h), end(lines_h),
-	                    [](const LineSegment& lhs, const LineSegment& rhs) {
-		                    return lhs.p1.y < rhs.p1.y;
-	                    });
-
-	auto yr_minmax =
-	std::minmax_element(begin(lines_h), end(lines_h),
-	                    [](const LineSegment& lhs, const LineSegment& rhs) {
-		                    return lhs.p2.y < rhs.p2.y;
-	                    });
-
-	quad_pts.push_back(yl_minmax.first->p1);  // Topleft
-	quad_pts.push_back(yl_minmax.second->p1); // Bottomleft
-	quad_pts.push_back(yr_minmax.first->p2);  // Topright
-	quad_pts.push_back(yr_minmax.second->p2); // Bottomright
-
-	// Now the desired coords
-
-	const int desired_width = char_roi.height * Plate::IDEAL_PLATE_RATIO;
-	squre_pts.emplace_back(0, 0);
-	squre_pts.emplace_back(0, char_roi.height);
-	squre_pts.emplace_back(desired_width, 0);
-	squre_pts.emplace_back(desired_width, char_roi.height);
-
-	cv::Mat image_transformed;
-	auto transformation = cv::getPerspectiveTransform(quad_pts, squre_pts);
-	cv::warpPerspective(roi, image_transformed, transformation,
-	                    {desired_width, roi.rows});
-
-#ifdef PUDIM
-	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-	            std::to_string(hahaha++) + "transformedbefore.jpg",
-	            image_preprocessed_debug(char_roi));
-	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-	            std::to_string(hahaha++) + "transformedafter.jpg",
-	            image_transformed);
-#endif
-
-	return image_transformed;
-}
 
 std::vector<cv::Mat>
 extract_characters(const cv::Mat& img)
