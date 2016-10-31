@@ -1,0 +1,12 @@
+{
+  "find_text": {
+    "find_characters": {
+      "precision_min": 0.5,
+      "precision_max": 1.25
+    },
+    "filter_small_rects": {
+      "edge_distance": 200,
+      "min_area": 500
+    }
+  }
+}

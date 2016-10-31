@@ -320,10 +320,6 @@ namespace
 			return a.x < b.x;
 		});
 
-		int clusterCount = 15;
-		Mat labels;
-		int attempts = 5;
-		Mat centers;
 		auto closest_pair = closest_points(cbegin(centers), cend(centers));
 
 #ifdef PUDIM
@@ -444,14 +440,14 @@ preprocess(const cv::Mat& image_original, cv::Mat& image_preprocessed)
 cv::Mat
 find_text(const cv::Mat& image_preprocessed)
 {
-	Congif& cfg = Config::instance();
+	const Config& cfg = Config::instance();
 
 	auto thresholds = produceThresholds(image_preprocessed);
 
 	std::vector<cv::Rect> chars;
-	find_characters(thresholds, chars, CV_RETR_LIST, 0.5, 1.25);
+	find_characters(thresholds, chars, CV_RETR_LIST, cfg.find_text.find_characters.precision_min, cfg.find_text.find_characters.precision_min);
 
-	filter_small_rects(chars, image_preprocessed.size(), 200, 500);
+	filter_small_rects(chars, image_preprocessed.size(), cfg.find_text.filter_small_rects.edge_distance, cfg.find_text.filter_small_rects.min_area);
 
 	filter_proximity(chars);
 
@@ -502,35 +498,34 @@ extract_characters(const cv::Mat& img)
 	return final_chars;
 }
 
+int detect(cv::Mat& image_original, cv::Mat& image_preprocessed, std::vector<cv::Mat>& characters)
+{
+	preprocess(image_original, image_preprocessed);
+	image_preprocessed.copyTo(image_debug);
+
+	cv::Mat temp = find_text(image_preprocessed);
+	characters = extract_characters(temp);
+
+	return 0;
+}
+
 /**
  *
  *
  *
  */
-PlateImage::PlateImage(const cv::Mat& img, const std::string& img_name)
-: name(img_name)
-  , image_original(img)
+PlateImage::PlateImage(const cv::Mat& img)
+  : image_original(img)
   , image_preprocessed()
-  , char_roi()
   , characters()
 {
 	hahaha = 0;
 	++Path::image_count;
 
-	std::cout << "====================\n";
-	std::cout << img_name + "\n\n";
-	std::chrono::time_point<std::chrono::system_clock> start =
-	std::chrono::system_clock::now();
+	std::cout << "====================\n\n";
 
-	preprocess(image_original, image_preprocessed);
-	image_preprocessed.copyTo(image_debug);
+	auto detect_timed = decorator_timer("Plate Image detector", detect);
 
-	cv::Mat temp = find_text(image_preprocessed);
-	// cv::Mat possible_plate = extract_plate(image_preprocessed(char_roi),
-	characters = extract_characters(temp);
+	detect_timed(image_original, image_preprocessed, characters);
 
-	std::chrono::time_point<std::chrono::system_clock> end =
-	std::chrono::system_clock::now();
-	std::chrono::duration<double> time_elapsed = end - start;
-	std::cerr << "Finished in " << time_elapsed.count() << "s\n";
 }

@@ -7,10 +7,22 @@ using json = nlohmann::json;
 
 class Config
 {
+public:
+
+	struct {
+		struct {
+			int precision_min;
+			int precision_max;
+		} find_characters;
+		struct {
+			int edge_distance;
+			int min_area;
+		} filter_small_rects;
+	} find_text;
 
 public:
 
-	static Config& instance();
+	static const Config& instance();
 
 	Config(const Config&) = delete;
 

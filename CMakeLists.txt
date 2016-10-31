@@ -1,15 +1,26 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PROJECT_NAME "srpv")
-
 project(${PROJECT_NAME})
 
-find_package(OpenCV REQUIRED)
-
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y -O2 -Wall -Wextra -Wfatal-errors -fopenmp -ffast-math")
 set(CMAKE_CXX_COMPILER "/usr/bin/g++-6")
 set(CMAKE_C_COMPILER "/usr/bin/gcc-6")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -Wextra -Wfatal-errors -ffast-math")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g3" CACHE STRING "Debug CXX compiler flags" FORCE)
+    set(CMAKE_C_FLAGS_DEBUG "-g3" CACHE STRING "Debug C compiler flags" FORCE)
+endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
+SET( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
+SET( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
+
+include_directories(
+	/usr/include/eigen3
+)
+
+find_package(OpenCV REQUIRED)
 
 add_executable(${PROJECT_NAME}
 	src/main.cpp
@@ -21,3 +32,6 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
+
+MESSAGE("CMAKE_C_FLAGS ${CMAKE_C_FLAGS}")
+MESSAGE("CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}")
