@@ -15,8 +15,8 @@ public:
 			double precision_max;
 		} find_characters;
 		struct {
-			int edge_distance;
 			int min_area;
+			int max_area;
 		} filter_small_rects;
 		struct {
 			double eps;

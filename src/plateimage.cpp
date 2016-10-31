@@ -93,7 +93,10 @@ void
 #endif
 }
 
-std::vector<size_t> dbscan_region_query(const std::vector<cv::Point>& points, size_t point_index, double eps)
+std::vector<size_t>
+    dbscan_region_query(const std::vector<cv::Point>& points,
+                        size_t point_index,
+                        double eps)
 {
 	std::vector<size_t> neighbors;
 	const auto& point = points[point_index];
@@ -116,7 +119,7 @@ std::vector<std::vector<size_t>>
 	std::vector<bool> clustered(points.size(), false);
 	std::vector<std::vector<size_t>> clusters;
 
-	for(size_t i = 0; i < points.size(); ++i) {
+	for (size_t i = 0; i < points.size(); ++i) {
 		if (!visited[i]) {
 			visited[i] = true;
 			auto neighbors = dbscan_region_query(points, i, eps);
@@ -130,7 +133,9 @@ std::vector<std::vector<size_t>>
 						visited[j] = true;
 						auto jneighbors = dbscan_region_query(points, j, eps);
 						if (jneighbors.size() >= min_pts) {
-							neighbors.insert(begin(neighbors), begin(jneighbors), end(jneighbors));
+							neighbors.insert(begin(neighbors),
+							                 begin(jneighbors),
+							                 end(jneighbors));
 						}
 					}
 					if (!clustered[j]) {
@@ -146,21 +151,13 @@ std::vector<std::vector<size_t>>
 }
 
 void
-    filter_small_rects(std::vector<cv::Rect>& chars,
-                       const cv::Size& image_size,
-                       int edge_distance,
-                       int min_area)
+    filter_small_rects(std::vector<cv::Rect>& chars, int min_area, int max_area)
 {
-	// Filter the rectangles by removing the ones touching the edges.
-	cv::Rect border_rect({0, 0}, image_size);
-	resizeRect(border_rect, {-edge_distance, -edge_distance}, {0, 0});
-
 	// Remove if it's too small or if it's outside the big rectangle
-	// TODO Remove the big rectangle check and add too big check
 	chars.erase(std::remove_if(begin(chars), end(chars),
-	                           [border_rect, min_area](const cv::Rect& r) {
-		                           return r.area() < min_area ||
-		                                  (r | border_rect) != border_rect;
+	                           [min_area, max_area](const cv::Rect& r) {
+		                           auto area = r.area();
+		                           return area < min_area || area > max_area;
 		                       }),
 	            end(chars));
 
@@ -169,7 +166,6 @@ void
 	for (const auto& r : chars) {
 		cv::rectangle(image_disp, r, Color::WHITE, 1);
 	}
-	cv::rectangle(image_disp, border_rect, Color::WHITE, 2);
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
 	                std::to_string(hahaha++) + "filter_small_rects.jpg",
 	            image_disp);
@@ -177,16 +173,14 @@ void
 }
 
 void
-    filter_dbscan(std::vector<cv::Rect>& chars)
+    filter_dbscan(std::vector<cv::Rect>& chars, double eps, size_t min_pts)
 {
-	const Config& cfg = Config::instance();
-
 	std::vector<cv::Point> centers;
 	for (auto const& i : chars) {
 		centers.push_back(rect_center(i));
 	}
 
-	auto clusters = dbscan(centers, cfg.find_text.filter_dbscan.eps, cfg.find_text.filter_dbscan.min_pts);
+	auto clusters = dbscan(centers, eps, min_pts);
 
 	if (clusters.empty()) {
 		throw std::runtime_error("filter_dbscan: no clusters found!");
@@ -200,14 +194,13 @@ void
 	for (size_t i = 0; i < clusters.size(); ++i) {
 		for (size_t j : clusters[i]) {
 			putText(image_disp, std::to_string(i), centers[j],
-		        cv::FONT_HERSHEY_SIMPLEX, 0.35, Color::WHITE);
+			        cv::FONT_HERSHEY_SIMPLEX, 0.35, Color::WHITE);
 		}
 	}
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
 	                std::to_string(hahaha++) + "filter_dbscan.jpg",
 	            image_disp);
 #endif
-
 }
 
 cv::Mat
@@ -292,14 +285,11 @@ cv::Mat
 	                cfg.find_text.find_characters.precision_min,
 	                cfg.find_text.find_characters.precision_max);
 
-	filter_small_rects(chars, image_preprocessed.size(),
-	                   cfg.find_text.filter_small_rects.edge_distance,
-	                   cfg.find_text.filter_small_rects.min_area);
+	filter_small_rects(chars, cfg.find_text.filter_small_rects.min_area,
+	                   cfg.find_text.filter_small_rects.max_area);
 
-	filter_dbscan(chars);
-
-	// Filter the rectangles by their y coordinate
-	// filter_y_distance(chars);
+	filter_dbscan(chars, cfg.find_text.filter_dbscan.eps,
+	              cfg.find_text.filter_dbscan.min_pts);
 
 	return unwarp_characters(image_preprocessed, chars);
 }
@@ -320,7 +310,7 @@ std::vector<cv::Mat>
 		throw std::runtime_error("extract_characters: Too many characters!");
 	}
 
-	filter_small_rects(chars, img.size(), 3, 100);
+	filter_small_rects(chars, 100, 1000);
 
 	// Sort rectangles by their x coordinate so that the character detection
 	// happens in order
@@ -345,7 +335,7 @@ std::vector<cv::Mat>
 	return final_chars;
 }
 
-int
+void
     detect(cv::Mat& image_original,
            cv::Mat& image_preprocessed,
            std::vector<cv::Mat>& characters)
@@ -354,9 +344,7 @@ int
 	image_preprocessed.copyTo(image_debug);
 
 	cv::Mat temp = find_text(image_preprocessed);
-	//characters = extract_characters(temp);
-
-	return 0;
+	// characters = extract_characters(temp);
 }
 
 /**
@@ -374,7 +362,7 @@ PlateImage::PlateImage(const cv::Mat& img)
 
 	std::cout << "====================\n";
 
-	auto detect_timed = decorator_timer("Plate Image detector", detect);
-
-	detect_timed(image_original, image_preprocessed, characters);
+	// timer("Plate Image detector"s, detect, image_original,
+	// image_preprocessed, characters);
+	detect(image_original, image_preprocessed, characters);
 }

@@ -2,45 +2,30 @@
 
 #include <chrono>
 #include <ctime>
+#include <functional>
 
-template<class>
-struct Decorator;
-
-template<class R, class... Args>
-struct Decorator<R(Args ...)> {
-	Decorator(const std::string& name, std::function<R(Args ...)> f)
-	: f_(f)
-	  , name_(name)
-	{}
-
-	Decorator(std::string&& name, std::function<R(Args ...)> f)
-	: f_(f)
-	  , name_(std::move(name))
-	{}
-
-	R operator()(Args ... args)
-	{
-		std::chrono::time_point <std::chrono::system_clock> start = std::chrono::system_clock::now();
-		auto r = f_(args...);
-		std::chrono::time_point <std::chrono::system_clock> end = std::chrono::system_clock::now();
-		std::chrono::duration<double> time_elapsed = end - start;
-		std::cout << name_ + ": Finished in " << time_elapsed.count() << "s\n";
-		return r;
-	}
-
-	std::function<R(Args ...)> f_;
-	std::string name_;
-};
 
 template<class R, class... Args>
-Decorator<R(Args...)>
-decorator_timer(const std::string& name, R (* f)(Args ...))
+R
+timer(const std::string& name, std::function<R(Args...)> f, Args... args)
 {
-	return Decorator<R(Args...)>(name, std::function<R(Args...)>(f));
+	using time = std::chrono::time_point<std::chrono::system_clock>;
+	time start = std::chrono::system_clock::now();
+	auto r = f(args...);
+	time end = std::chrono::system_clock::now();
+	std::chrono::duration<double> time_elapsed = end - start;
+	std::cout << name + ": Finished in " << time_elapsed.count() << "s\n";
+	return r;
 }
 
-template<class R, class... Args>
-Decorator<R(Args...)> decorator_timer(std::string&& name, R (* f)(Args ...))
+template<class... Args>
+void
+timer(const std::string& name, std::function<void(Args...)> f, Args... args)
 {
-	return Decorator<R(Args...)>(std::move(name), std::function<R(Args...)>(f));
+	using time = std::chrono::time_point<std::chrono::system_clock>;
+	time start = std::chrono::system_clock::now();
+	f(args...);
+	time end = std::chrono::system_clock::now();
+	std::chrono::duration<double> time_elapsed = end - start;
+	std::cout << name + ": Finished in " << time_elapsed.count() << "s\n";
 }
