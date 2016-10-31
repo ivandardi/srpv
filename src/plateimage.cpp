@@ -13,7 +13,6 @@
 #include <ctime>
 
 #define PUDIM
-//#define PUDIM_HIST
 
 int hahaha = 0;
 cv::Mat image_debug;
@@ -95,128 +94,6 @@ namespace
 #endif
 	}
 
-/**
- *
- *
- *
- */
-	void
-	get_histogram(const cv::Mat& roi, cv::Mat& hist, int histSize)
-	{
-		float range[] = {0, 256};
-		const float* histRange = {range};
-		cv::calcHist(&roi, 1, 0, cv::Mat(), hist, 1, &histSize, &histRange);
-	}
-
-/**
- *
- *
- *
- */
-	int
-	histogram_peak_count(const cv::Mat& hist)
-	{
-		int peaks = 0;
-
-		if (hist.at<int>(0) > hist.at<int>(1)) {
-			++peaks;
-		}
-		if (hist.at<int>(hist.total() - 1) < hist.at<int>(hist.total())) {
-			++peaks;
-		}
-
-		for (std::size_t i = 1; i < hist.total() - 1; ++i) {
-			const int left = hist.at<int>(i - 1);
-			const int center = hist.at<int>(i);
-			const int right = hist.at<int>(i + 1);
-			if (left < center && center > right) {
-				++peaks;
-			}
-		}
-
-		return peaks;
-	}
-
-/**
- *
- *
- *
- */
-	void
-	show_hist(const cv::Mat& roi, const cv::Mat& hist, int histSize)
-	{
-		static int it = 0;
-		int hist_w = 512;
-		int hist_h = 400;
-		int bin_w = cvRound((double) hist_w / histSize);
-		cv::Mat histImage = cv::Mat::zeros({hist_w, hist_h}, CV_8UC1);
-		cv::Mat histt;
-		normalize(hist, histt, 0, histImage.rows, cv::NORM_MINMAX, -1);
-		for (int i = 0; i < histSize; i++) {
-			cv::line(histImage, {bin_w * (i), hist_h},
-			         {bin_w * (i), hist_h - cvRound(histt.at<float>(i))},
-			         Color::WHITE, 15);
-		}
-
-		cv::Mat combined = cv::Mat::zeros({hist_w + roi.cols, hist_h}, CV_8UC1);
-		roi.copyTo(combined({0, 0, roi.cols, roi.rows}));
-		histImage.copyTo(cv::Mat(combined, {roi.cols, 0, hist_w, hist_h}));
-		cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-		            std::to_string(hahaha++) + "histogram" +
-		            std::to_string(++it) + ".jpg",
-		            combined);
-	}
-
-/**
- *
- *
- *
- */
-	void
-	filter_bimodal_histogram(const cv::Mat& image_preprocessed,
-	                         std::vector<cv::Rect>& chars)
-	{
-		std::vector<cv::Rect> chars_filtered;
-		constexpr int bins = 16;
-		for (const auto& r : chars) {
-			cv::Mat temp = image_preprocessed(r);
-			equalizeHist(temp, temp);
-
-			cv::Mat hist;
-			get_histogram(temp, hist, bins);
-
-			// histogram is calculated
-			// now we need to smooth it to try and find two peaks
-			cv::GaussianBlur(hist, hist, {9, 9}, 0, 0, cv::BORDER_REPLICATE);
-
-#ifdef PUDIM_HIST
-			show_hist(temp, hist, bins);
-#endif
-
-			if (histogram_peak_count(hist) == 2) {
-				// The region that we have has high chances of being a character
-				chars_filtered.push_back(r);
-			}
-		}
-
-		if (chars_filtered.empty()) {
-			throw std::runtime_error(
-			"filter_bimodal_histogram: chars_filtered is empty!");
-		}
-
-		chars = std::move(chars_filtered);
-
-#ifdef PUDIM
-		cv::Mat image_disp =
-		cv::Mat::zeros(image_preprocessed.size(), image_preprocessed.type());
-		for (const auto& r : chars) {
-			cv::rectangle(image_disp, r, Color::WHITE, 1);
-		}
-		cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-		            std::to_string(hahaha++) + "filter_bimodal_histogram.jpg",
-		            image_disp);
-#endif
-	}
 
 	dbscan(const std::vector<cv::Point>& points, double eps, int min_pts)
 	{
