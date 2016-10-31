@@ -21,6 +21,7 @@ using namespace std::literals;
 
 namespace
 {
+
 /**
  *
  *
@@ -115,9 +116,15 @@ namespace
 	int
 	histogram_peak_count(const cv::Mat& hist)
 	{
-		int peaks = (hist.at<int>(0) > hist.at<int>(1)) +
-		            (hist.at<int>(hist.total()) > hist.at<int>(
-		            hist.total() - 1)); // If the peak is at the border
+		int peaks = 0;
+
+		if (hist.at<int>(0) > hist.at<int>(1)) {
+			++peaks;
+		}
+		if (hist.at<int>(hist.total() - 1) < hist.at<int>(hist.total())) {
+			++peaks;
+		}
+
 		for (std::size_t i = 1; i < hist.total() - 1; ++i) {
 			const int left = hist.at<int>(i - 1);
 			const int center = hist.at<int>(i);
@@ -126,6 +133,7 @@ namespace
 				++peaks;
 			}
 		}
+
 		return peaks;
 	}
 
@@ -208,6 +216,11 @@ namespace
 		            std::to_string(hahaha++) + "filter_bimodal_histogram.jpg",
 		            image_disp);
 #endif
+	}
+
+	dbscan(const std::vector<cv::Point>& points, double eps, int min_pts)
+	{
+
 	}
 
 /**
@@ -308,7 +321,7 @@ namespace
 		return closest_pair;
 	}
 
-	void filter_proximity(std::vector<cv::Rect>& chars)
+	void filter_dbscan(std::vector<cv::Rect>& chars)
 	{
 
 		std::vector<cv::Point> centers;
@@ -316,11 +329,7 @@ namespace
 			centers.push_back(rect_center(i));
 		}
 
-		std::sort(begin(centers), end(centers), [](const cv::Point& a, cv::Point& b){
-			return a.x < b.x;
-		});
-
-		auto closest_pair = closest_points(cbegin(centers), cend(centers));
+		dbscan(centers, );
 
 #ifdef PUDIM
 		cv::Mat image_disp =
@@ -332,34 +341,9 @@ namespace
 			putText(image_disp, std::to_string(i), centers[i], cv::FONT_HERSHEY_SIMPLEX, 0.35, Color::WHITE);
 		}
 		cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-		            std::to_string(hahaha++) + "filter_proximity.jpg",
+		            std::to_string(hahaha++) + "filter_dbscan.jpg",
 		            image_disp);
 #endif
-
-
-		std::vector<double> distances;
-		for (auto it = std::next(begin(centers)); it != end(centers); ++it) {
-			distances.push_back(distanceBetweenPoints(*it, *(it - 1)));
-		}
-
-		auto upper = *std::max_element(begin(distances), end(distances));
-		for (auto& i : distances) {
-			i /= upper;
-		}
-
-		std::cerr << "Distances normalized\n";
-		std::copy(begin(distances), end(distances), std::ostream_iterator<double>(std::cerr, "\n"));
-		std::cerr << '\n';
-
-		std::vector<double> derivative2;
-		// find region with smallest differences (derivative)
-		for (size_t i = 1; i < distances.size() - 1; ++i) {
-			derivative2.push_back(distances[i + 1] + distances[i - 1] - 2 * distances[i]);
-		}
-
-		std::cerr << "Derivatives\n";
-		std::copy(begin(derivative2), end(derivative2), std::ostream_iterator<double>(std::cerr, "\n"));
-		std::cerr << '\n';
 
 	}
 
@@ -449,7 +433,7 @@ find_text(const cv::Mat& image_preprocessed)
 
 	filter_small_rects(chars, image_preprocessed.size(), cfg.find_text.filter_small_rects.edge_distance, cfg.find_text.filter_small_rects.min_area);
 
-	filter_proximity(chars);
+	filter_dbscan(chars);
 
 	// Filter the rectangles by their y coordinate
 	// filter_y_distance(chars);
