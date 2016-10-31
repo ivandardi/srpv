@@ -29,6 +29,7 @@ add_executable(${PROJECT_NAME}
 	src/binarize_wolf.cpp
 	src/constants.cpp
 	src/linesegment.cpp
+	src/config.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
