@@ -24,6 +24,13 @@ public:
 		} filter_dbscan;
 	} find_text;
 
+	struct {
+		struct {
+			double precision_min;
+			double precision_max;
+		} find_characters;
+	} extract_characters;
+
 public:
 
 	static const Config& instance();

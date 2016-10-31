@@ -7,5 +7,5 @@ struct PlateImage {
 
 	cv::Mat image_original;
 	cv::Mat image_preprocessed;
-	std::vector<cv::Mat> characters;
+	std::vector<std::vector<cv::Mat>> characters;
 };

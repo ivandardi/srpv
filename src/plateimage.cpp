@@ -12,8 +12,8 @@
 #include <chrono>
 #include <ctime>
 
-#define PUDIM
-#define DEBUG_DBSCAN
+//#define PUDIM
+//#define DEBUG_DBSCAN
 
 int hahaha = 0;
 cv::Mat image_debug;
@@ -172,8 +172,8 @@ void
 #endif
 }
 
-void
-    filter_dbscan(std::vector<cv::Rect>& chars, double eps, size_t min_pts)
+std::vector<std::vector<cv::Rect>>
+    filter_dbscan(const std::vector<cv::Rect>& chars, double eps, size_t min_pts)
 {
 	std::vector<cv::Point> centers;
 	for (auto const& i : chars) {
@@ -184,6 +184,15 @@ void
 
 	if (clusters.empty()) {
 		throw std::runtime_error("filter_dbscan: no clusters found!");
+	}
+
+	std::vector<std::vector<cv::Rect>> ret;
+	for(const auto& v : clusters) {
+		std::vector<cv::Rect> temp;
+		for (size_t i : v) {
+			temp.push_back(chars[i]);
+		}
+		ret.push_back(temp);
 	}
 
 #ifdef DEBUG_DBSCAN
@@ -201,11 +210,13 @@ void
 	                std::to_string(hahaha++) + "filter_dbscan.jpg",
 	            image_disp);
 #endif
+
+	return ret;
 }
 
 cv::Mat
     unwarp_characters(const cv::Mat& image_preprocessed,
-                      std::vector<cv::Rect>& chars)
+                      const std::vector<cv::Rect>& chars)
 {
 	auto rects = std::minmax_element(begin(chars), end(chars),
 	                                 [](const cv::Rect& a, const cv::Rect& b) {
@@ -224,15 +235,24 @@ cv::Mat
 
 	// Now the desired coords
 
+	auto desired_width = rects.second->br().x - rects.first->x;
+
 	squre_pts.emplace_back(0, 0);
 	squre_pts.emplace_back(0, rects.first->height);
-	squre_pts.emplace_back(rects.first->br().x, rects.first->y);
-	squre_pts.emplace_back(rects.first->br().x, rects.first->height);
+	squre_pts.emplace_back(desired_width, 0);
+	squre_pts.emplace_back(desired_width, rects.first->height);
 
 	cv::Mat image_transformed;
 	auto transformation = cv::getPerspectiveTransform(quad_pts, squre_pts);
 	cv::warpPerspective(image_preprocessed, image_transformed, transformation,
-	                    {rects.first->br().x, rects.first->height});
+	                    {desired_width, rects.first->height});
+
+#ifdef PUDIM
+	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
+	                std::to_string(hahaha++) + "unwarp_characters.jpg",
+	            image_transformed);
+#endif
+
 	return image_transformed;
 }
 }
@@ -273,44 +293,50 @@ void
  *
  *
  */
-cv::Mat
+std::vector<cv::Mat>
     find_text(const cv::Mat& image_preprocessed)
 {
 	const Config& cfg = Config::instance();
 
-	auto thresholds = produceThresholds(image_preprocessed);
+	auto threshold = produceThresholds(image_preprocessed);
 
 	std::vector<cv::Rect> chars;
-	find_characters(thresholds, chars, CV_RETR_LIST,
+	find_characters(threshold, chars, CV_RETR_LIST,
 	                cfg.find_text.find_characters.precision_min,
 	                cfg.find_text.find_characters.precision_max);
 
 	filter_small_rects(chars, cfg.find_text.filter_small_rects.min_area,
 	                   cfg.find_text.filter_small_rects.max_area);
 
-	filter_dbscan(chars, cfg.find_text.filter_dbscan.eps,
-	              cfg.find_text.filter_dbscan.min_pts);
+	auto regions = filter_dbscan(chars, cfg.find_text.filter_dbscan.eps,
+	                             cfg.find_text.filter_dbscan.min_pts);
 
-	return unwarp_characters(image_preprocessed, chars);
+	std::vector<cv::Mat> warped;
+	for (const auto& v : regions) {
+		warped.push_back(unwarp_characters(image_preprocessed, v));
+	}
+
+	return warped;
 }
 
 
 std::vector<cv::Mat>
     extract_characters(const cv::Mat& img)
 {
+	const Config& cfg = Config::instance();
+
 	auto t = produceThresholds(img);
 
-	cv::GaussianBlur(t, t, {3, 3}, 0);
 	cv::threshold(t, t, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
 
 	std::vector<cv::Rect> chars;
-	find_characters(t, chars, CV_RETR_EXTERNAL, 0.75, 1.1);
+	find_characters(t, chars, CV_RETR_EXTERNAL,
+	                cfg.extract_characters.find_characters.precision_min,
+	                cfg.extract_characters.find_characters.precision_max);
 
 	if (chars.size() > 15) {
 		throw std::runtime_error("extract_characters: Too many characters!");
 	}
-
-	filter_small_rects(chars, 100, 1000);
 
 	// Sort rectangles by their x coordinate so that the character detection
 	// happens in order
@@ -321,7 +347,7 @@ std::vector<cv::Mat>
 
 	std::vector<cv::Mat> final_chars;
 	for (const auto& r : chars) {
-		final_chars.push_back(img(r));
+		final_chars.push_back(t(r));
 	}
 
 	++hahaha;
@@ -338,13 +364,20 @@ std::vector<cv::Mat>
 void
     detect(cv::Mat& image_original,
            cv::Mat& image_preprocessed,
-           std::vector<cv::Mat>& characters)
+           std::vector<std::vector<cv::Mat>> & characters)
 {
 	preprocess(image_original, image_preprocessed);
 	image_preprocessed.copyTo(image_debug);
 
-	cv::Mat temp = find_text(image_preprocessed);
-	// characters = extract_characters(temp);
+	auto temp = find_text(image_preprocessed);
+
+	for (const auto& v : temp) {
+		try {
+			characters.push_back(extract_characters(v));
+		} catch (const std::exception& e) {
+			std::cout << "detect: " << e.what();
+		}
+	}
 }
 
 /**
@@ -362,7 +395,7 @@ PlateImage::PlateImage(const cv::Mat& img)
 
 	std::cout << "====================\n";
 
-	// timer("Plate Image detector"s, detect, image_original,
-	// image_preprocessed, characters);
+	//timer("Plate Image detector"s, detect, image_original, image_preprocessed, characters);
 	detect(image_original, image_preprocessed, characters);
 }
+

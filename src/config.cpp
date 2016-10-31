@@ -16,6 +16,9 @@ Config::Config()
 
 	find_text.filter_dbscan.eps = cfg["find_text"]["filter_dbscan"]["eps"];
 	find_text.filter_dbscan.min_pts = cfg["find_text"]["filter_dbscan"]["min_pts"];
+
+	extract_characters.find_characters.precision_min = cfg["extract_characters"]["find_characters"]["precision_min"];
+	extract_characters.find_characters.precision_max = cfg["extract_characters"]["find_characters"]["precision_max"];
 }
 
 const Config& Config::instance()

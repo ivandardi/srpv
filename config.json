@@ -12,5 +12,11 @@
       "eps": 120,
       "min_pts": 7
     }
+  },
+  "extract_characters": {
+    "find_characters": {
+      "precision_min": 0.75,
+      "precision_max": 1.2
+    }
   }
 }
