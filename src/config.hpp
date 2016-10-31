@@ -11,8 +11,8 @@ public:
 
 	struct {
 		struct {
-			int precision_min;
-			int precision_max;
+			double precision_min;
+			double precision_max;
 		} find_characters;
 		struct {
 			int edge_distance;
