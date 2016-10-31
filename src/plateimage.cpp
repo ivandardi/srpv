@@ -177,7 +177,6 @@ void
 void
     filter_dbscan(std::vector<cv::Rect>& chars)
 {
-	std::cerr << "Enter dbscan\n";
 
 	std::vector<cv::Point> centers;
 	for (auto const& i : chars) {
@@ -206,7 +205,6 @@ void
 	            image_disp);
 #endif
 
-	std::cerr << "Exit dbscan\n";
 }
 
 cv::Mat
@@ -282,7 +280,6 @@ void
 cv::Mat
     find_text(const cv::Mat& image_preprocessed)
 {
-	std::cerr << "Enter find_text\n";
 	const Config& cfg = Config::instance();
 
 	auto thresholds = produceThresholds(image_preprocessed);
@@ -301,7 +298,6 @@ cv::Mat
 	// Filter the rectangles by their y coordinate
 	// filter_y_distance(chars);
 
-	std::cerr << "Exit find_text\n";
 	return unwarp_characters(image_preprocessed, chars);
 }
 
@@ -351,7 +347,6 @@ int
            cv::Mat& image_preprocessed,
            std::vector<cv::Mat>& characters)
 {
-	std::cerr << "Enter detect\n";
 	preprocess(image_original, image_preprocessed);
 	image_preprocessed.copyTo(image_debug);
 
@@ -359,7 +354,6 @@ int
 	//characters = extract_characters(temp);
 
 	return 0;
-	std::cerr << "Exit detect\n";
 }
 
 /**
@@ -372,7 +366,6 @@ PlateImage::PlateImage(const cv::Mat& img)
 , image_preprocessed()
 , characters()
 {
-	std::cerr << "Enter constructor\n";
 	hahaha = 0;
 	++Path::image_count;
 
@@ -381,5 +374,4 @@ PlateImage::PlateImage(const cv::Mat& img)
 	auto detect_timed = decorator_timer("Plate Image detector", detect);
 
 	detect_timed(image_original, image_preprocessed, characters);
-	std::cerr << "Exit constructor\n";
 }
