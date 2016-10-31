@@ -1,9 +1,10 @@
 #include "config.hpp"
+#include "constants.hpp"
 
 
 Config::Config()
 {
-	std::ifstream config_file("config.json");
+	std::ifstream config_file(Path::CFG);
 	json cfg;
 	config_file >> cfg;
 
@@ -12,6 +13,9 @@ Config::Config()
 
 	find_text.filter_small_rects.edge_distance = cfg["find_text"]["filter_small_rects"]["edge_distance"];
 	find_text.filter_small_rects.min_area = cfg["find_text"]["filter_small_rects"]["min_area"];
+
+	find_text.filter_dbscan.eps = cfg["find_text"]["filter_dbscan"]["eps"];
+	find_text.filter_dbscan.min_pts = cfg["find_text"]["filter_dbscan"]["min_pts"];
 }
 
 const Config& Config::instance()

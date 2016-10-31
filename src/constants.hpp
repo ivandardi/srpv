@@ -5,6 +5,7 @@
 
 namespace Path
 {
+	extern std::string CFG;
 	extern std::string DST;
 	extern std::string SRC;
 	extern int image_count;

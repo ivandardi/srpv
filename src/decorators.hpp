@@ -24,7 +24,7 @@ struct Decorator<R(Args ...)> {
 		auto r = f_(args...);
 		std::chrono::time_point <std::chrono::system_clock> end = std::chrono::system_clock::now();
 		std::chrono::duration<double> time_elapsed = end - start;
-		std::cerr << name_ + ": Finished in " << time_elapsed.count() << "s\n";
+		std::cout << name_ + ": Finished in " << time_elapsed.count() << "s\n";
 		return r;
 	}
 

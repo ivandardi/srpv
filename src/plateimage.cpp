@@ -13,6 +13,7 @@
 #include <ctime>
 
 #define PUDIM
+#define DEBUG_DBSCAN
 
 int hahaha = 0;
 cv::Mat image_debug;
@@ -155,6 +156,7 @@ void
 	resizeRect(border_rect, {-edge_distance, -edge_distance}, {0, 0});
 
 	// Remove if it's too small or if it's outside the big rectangle
+	// TODO Remove the big rectangle check and add too big check
 	chars.erase(std::remove_if(begin(chars), end(chars),
 	                           [border_rect, min_area](const cv::Rect& r) {
 		                           return r.area() < min_area ||
@@ -177,19 +179,20 @@ void
 void
     filter_dbscan(std::vector<cv::Rect>& chars)
 {
+	const Config& cfg = Config::instance();
 
 	std::vector<cv::Point> centers;
 	for (auto const& i : chars) {
 		centers.push_back(rect_center(i));
 	}
 
-	auto clusters = dbscan(centers, 50, 4);
+	auto clusters = dbscan(centers, cfg.find_text.filter_dbscan.eps, cfg.find_text.filter_dbscan.min_pts);
 
 	if (clusters.empty()) {
 		throw std::runtime_error("filter_dbscan: no clusters found!");
 	}
 
-#ifdef PUDIM
+#ifdef DEBUG_DBSCAN
 	cv::Mat image_disp = cv::Mat::zeros(image_debug.size(), image_debug.type());
 	for (const auto& r : chars) {
 		cv::rectangle(image_disp, r, Color::WHITE, 1);

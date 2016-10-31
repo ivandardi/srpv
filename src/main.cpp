@@ -17,15 +17,16 @@ using namespace std;
 int main(int argc, char** argv)
 {
 
-	if (argc < 4) {
+	if (argc < 5) {
 		cout << "Argument error";
 		return -1;
 	}
 
-	Path::SRC = argv[1];
-	Path::DST = argv[2];
-	size_t frames_begin = std::stoi(argv[3]);
-	size_t frames_end = (argc >= 5) ? std::stoull(argv[4])
+	Path::CFG = argv[1];
+	Path::SRC = argv[2];
+	Path::DST = argv[3];
+	size_t frames_begin = std::stoi(argv[4]);
+	size_t frames_end = (argc >= 6) ? std::stoull(argv[5])
 	                               : std::numeric_limits<int>::max();
 
 	cv::VideoCapture cap(Path::SRC);

@@ -18,6 +18,10 @@ public:
 			int edge_distance;
 			int min_area;
 		} filter_small_rects;
+		struct {
+			double eps;
+			int min_pts;
+		} filter_dbscan;
 	} find_text;
 
 public:
