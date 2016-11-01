@@ -12,13 +12,15 @@
 #include <chrono>
 #include <ctime>
 
-#define TIMER
-//#define PUDIM
-//#define DEBUG_DBSCAN
+//#define TIMER
+#define PUDIM
+#define DEBUG_DBSCAN
 
 int hahaha = 0;
 cv::Mat image_debug;
 using namespace std::literals;
+
+
 
 namespace
 {
@@ -343,7 +345,7 @@ std::vector<cv::Mat>
 	                cfg.extract_characters.find_characters.precision_min,
 	                cfg.extract_characters.find_characters.precision_max);
 
-	if (chars.size() > 15) {
+	if (chars.size() > 7) {
 		throw std::runtime_error("extract_characters: Too many characters!");
 	}
 
@@ -376,7 +378,7 @@ void
            std::vector<std::vector<cv::Mat>>& characters)
 {
 #ifdef TIMER
-	timer("preprocess", &preprocess, image_original, image_preprocessed);
+	timer("preprocess", preprocess, image_original, image_preprocessed);
 #else
 	preprocess(image_original, image_preprocessed);
 #endif
@@ -384,13 +386,13 @@ void
 
 	auto temp = find_text(image_preprocessed);
 
-	// for (const auto& v : temp) {
-	// 	try {
-	// 		characters.push_back(extract_characters(v));
-	// 	} catch (const std::exception& e) {
-	// 		std::cout << "detect: " << e.what();
-	// 	}
-	// }
+	for (const auto& v : temp) {
+		try {
+			characters.push_back(extract_characters(v));
+		} catch (const std::exception& e) {
+			std::cout << "detect: " << e.what();
+		}
+	}
 }
 
 /**
