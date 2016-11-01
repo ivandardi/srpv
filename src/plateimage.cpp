@@ -12,6 +12,7 @@
 #include <chrono>
 #include <ctime>
 
+#define TIMER
 //#define PUDIM
 //#define DEBUG_DBSCAN
 
@@ -173,7 +174,9 @@ void
 }
 
 std::vector<std::vector<cv::Rect>>
-    filter_dbscan(const std::vector<cv::Rect>& chars, double eps, size_t min_pts)
+    filter_dbscan(const std::vector<cv::Rect>& chars,
+                  double eps,
+                  size_t min_pts)
 {
 	std::vector<cv::Point> centers;
 	for (auto const& i : chars) {
@@ -187,7 +190,7 @@ std::vector<std::vector<cv::Rect>>
 	}
 
 	std::vector<std::vector<cv::Rect>> ret;
-	for(const auto& v : clusters) {
+	for (const auto& v : clusters) {
 		std::vector<cv::Rect> temp;
 		for (size_t i : v) {
 			temp.push_back(chars[i]);
@@ -247,11 +250,11 @@ cv::Mat
 	cv::warpPerspective(image_preprocessed, image_transformed, transformation,
 	                    {desired_width, rects.first->height});
 
-#ifdef PUDIM
+	//#ifdef PUDIM
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
 	                std::to_string(hahaha++) + "unwarp_characters.jpg",
 	            image_transformed);
-#endif
+	//#endif
 
 	return image_transformed;
 }
@@ -308,8 +311,14 @@ std::vector<cv::Mat>
 	filter_small_rects(chars, cfg.find_text.filter_small_rects.min_area,
 	                   cfg.find_text.filter_small_rects.max_area);
 
+#ifdef TIMER
+	auto regions =
+	    timer("dbscan", filter_dbscan, chars, cfg.find_text.filter_dbscan.eps,
+	          cfg.find_text.filter_dbscan.min_pts);
+#else
 	auto regions = filter_dbscan(chars, cfg.find_text.filter_dbscan.eps,
 	                             cfg.find_text.filter_dbscan.min_pts);
+#endif
 
 	std::vector<cv::Mat> warped;
 	for (const auto& v : regions) {
@@ -362,22 +371,26 @@ std::vector<cv::Mat>
 }
 
 void
-    detect(cv::Mat& image_original,
+    detect(const cv::Mat& image_original,
            cv::Mat& image_preprocessed,
-           std::vector<std::vector<cv::Mat>> & characters)
+           std::vector<std::vector<cv::Mat>>& characters)
 {
+#ifdef TIMER
+	timer("preprocess", &preprocess, image_original, image_preprocessed);
+#else
 	preprocess(image_original, image_preprocessed);
+#endif
 	image_preprocessed.copyTo(image_debug);
 
 	auto temp = find_text(image_preprocessed);
 
-	for (const auto& v : temp) {
-		try {
-			characters.push_back(extract_characters(v));
-		} catch (const std::exception& e) {
-			std::cout << "detect: " << e.what();
-		}
-	}
+	// for (const auto& v : temp) {
+	// 	try {
+	// 		characters.push_back(extract_characters(v));
+	// 	} catch (const std::exception& e) {
+	// 		std::cout << "detect: " << e.what();
+	// 	}
+	// }
 }
 
 /**
@@ -395,7 +408,10 @@ PlateImage::PlateImage(const cv::Mat& img)
 
 	std::cout << "====================\n";
 
-	//timer("Plate Image detector"s, detect, image_original, image_preprocessed, characters);
+#ifdef TIMER
+	timer("PlateImageConstructor: detect", detect, image_original,
+	      image_preprocessed, characters);
+#else
 	detect(image_original, image_preprocessed, characters);
+#endif
 }
-
