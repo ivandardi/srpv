@@ -1,8 +1,6 @@
 #pragma once
 
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/core/core.hpp"
+#include "opencv2/opencv.hpp"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -54,3 +52,5 @@ cv::Size getSizeMaintainingAspect(const cv::Mat& inputImg, int maxWidth,
 
 std::string
 replaceAll(std::string str, const std::string& from, const std::string& to);
+
+void resize_ratio(const cv::Mat& input, cv::Mat& output, int width);

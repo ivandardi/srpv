@@ -1,5 +1,4 @@
 #include "utility.hpp"
-#include <opencv2/core/core.hpp>
 #include <functional>
 #include <numeric>
 #include <cctype>
@@ -76,3 +75,8 @@ replaceAll(std::string str, const std::string& from, const std::string& to)
 	return str;
 }
 
+void resize_ratio(const cv::Mat& input, cv::Mat& output, int width)
+{
+	int height = width * input.rows / input.cols;
+	cv::resize(input, output, {width, height});
+}

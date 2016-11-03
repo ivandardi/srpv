@@ -9,12 +9,16 @@
 #include <functional>
 #include <numeric>
 #include <iterator>
-#include <chrono>
-#include <ctime>
+
+#include <opencv2/text.hpp>
 
 //#define TIMER
-#define PUDIM
+#define DEBUG
 #define DEBUG_DBSCAN
+#define DEBUG_UNWARP
+#define DEBUG_FINALCHARS
+
+//#define EXTRACT_CHARACTERS
 
 int hahaha = 0;
 cv::Mat image_debug;
@@ -29,23 +33,33 @@ namespace
  *
  *
  */
-auto produceThresholds(const cv::Mat& img_gray)
+auto produceThresholds(const cv::Mat& img_gray, cv::Size se_size, int morph_op)
 {
-	cv::Mat t{img_gray.size(), CV_8UC1};
+	cv::Mat thresh{img_gray.size(), CV_8UC1};
 
 	// Wolf
 	int k = 0, win = 18;
-	NiblackSauvolaWolfJolion(img_gray, t, NiblackVersion::WOLFJOLION, win, win,
+	NiblackSauvolaWolfJolion(img_gray, thresh, NiblackVersion::WOLFJOLION, win, win,
 	                         0.05 + (k * 0.35));
-	cv::bitwise_not(t, t);
+	cv::bitwise_not(thresh, thresh);
 
-#ifdef PUDIM
+
+#ifdef DEBUG
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-	                std::to_string(hahaha++) + "threshandmorph.jpg",
-	            t);
+	                std::to_string(++hahaha) + "thresh.jpg",
+	            thresh);
 #endif
 
-	return t;
+	auto elem = cv::getStructuringElement(cv::MORPH_ELLIPSE, se_size);
+	cv::morphologyEx(thresh, thresh, morph_op, elem, {-1, -1});
+
+#ifdef DEBUG
+	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
+	                std::to_string(++hahaha) + "threshandmorph.jpg",
+	            thresh);
+#endif
+
+	return thresh;
 }
 
 /**
@@ -85,13 +99,13 @@ void
 		throw std::runtime_error("find_characters: no characters found!");
 	}
 
-#ifdef PUDIM
+#ifdef DEBUG
 	cv::Mat image_disp = cv::Mat::zeros(image_debug.size(), image_debug.type());
 	for (const auto& r : chars) {
 		cv::rectangle(image_disp, r, Color::WHITE, 1);
 	}
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-	                std::to_string(hahaha++) + "find_characters.jpg",
+	                std::to_string(++hahaha) + "find_characters.jpg",
 	            image_disp);
 #endif
 }
@@ -164,13 +178,13 @@ void
 		                       }),
 	            end(chars));
 
-#ifdef PUDIM
+#ifdef DEBUG
 	cv::Mat image_disp = cv::Mat::zeros(image_debug.size(), image_debug.type());
 	for (const auto& r : chars) {
 		cv::rectangle(image_disp, r, Color::WHITE, 1);
 	}
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-	                std::to_string(hahaha++) + "filter_small_rects.jpg",
+	                std::to_string(++hahaha) + "filter_small_rects.jpg",
 	            image_disp);
 #endif
 }
@@ -212,7 +226,7 @@ std::vector<std::vector<cv::Rect>>
 		}
 	}
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-	                std::to_string(hahaha++) + "filter_dbscan.jpg",
+	                std::to_string(++hahaha) + "filter_dbscan.jpg",
 	            image_disp);
 #endif
 
@@ -241,22 +255,23 @@ cv::Mat
 	// Now the desired coords
 
 	auto desired_width = rects.second->br().x - rects.first->x;
+	auto desired_height = std::max(rects.first->height, rects.second->height);
 
 	squre_pts.emplace_back(0, 0);
-	squre_pts.emplace_back(0, rects.first->height);
+	squre_pts.emplace_back(0, desired_height);
 	squre_pts.emplace_back(desired_width, 0);
-	squre_pts.emplace_back(desired_width, rects.first->height);
+	squre_pts.emplace_back(desired_width, desired_height);
 
 	cv::Mat image_transformed;
 	auto transformation = cv::getPerspectiveTransform(quad_pts, squre_pts);
 	cv::warpPerspective(image_preprocessed, image_transformed, transformation,
-	                    {desired_width, rects.first->height});
+	                    {desired_width, desired_height});
 
-	//#ifdef PUDIM
+	#ifdef DEBUG_UNWARP
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-	                std::to_string(hahaha++) + "unwarp_characters.jpg",
+	                std::to_string(++hahaha) + "unwarp_characters.jpg",
 	            image_transformed);
-	//#endif
+	#endif
 
 	return image_transformed;
 }
@@ -270,15 +285,12 @@ cv::Mat
 void
     preprocess(const cv::Mat& image_original, cv::Mat& image_preprocessed)
 {
-	// Crop image to the center, because that's were plates are more likely to
-	// be
-	// image_original({image_original.cols / 4, 600, image_original.cols / 2,
-	//                image_original.rows - 600}).copyTo(temp);
-
 	cv::Mat temp;
 
+	resize_ratio(image_original, temp, 640);
+
 	// Convert to grayscale
-	cv::cvtColor(image_original, temp, cv::COLOR_BGR2GRAY);
+	cv::cvtColor(temp, temp, cv::COLOR_BGR2GRAY);
 
 	// Increase contrast
 	cv::createCLAHE(2.0, {8, 8})->apply(temp, temp);
@@ -286,9 +298,9 @@ void
 	// Blur, but keep the edges
 	cv::bilateralFilter(temp, image_preprocessed, 5, 40, 40);
 
-#ifdef PUDIM
+#ifdef DEBUG
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-	                std::to_string(hahaha++) + "preprocess.jpg",
+	                std::to_string(++hahaha) + "preprocess.jpg",
 	            image_preprocessed);
 #endif
 }
@@ -303,7 +315,7 @@ std::vector<cv::Mat>
 {
 	const Config& cfg = Config::instance();
 
-	auto threshold = produceThresholds(image_preprocessed);
+	auto threshold = produceThresholds(image_preprocessed, {3, 3}, cv::MORPH_OPEN);
 
 	std::vector<cv::Rect> chars;
 	find_characters(threshold, chars, CV_RETR_LIST,
@@ -336,9 +348,7 @@ std::vector<cv::Mat>
 {
 	const Config& cfg = Config::instance();
 
-	auto t = produceThresholds(img);
-
-	cv::threshold(t, t, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+	auto t = produceThresholds(img, {3, 3}, cv::MORPH_OPEN);
 
 	std::vector<cv::Rect> chars;
 	find_characters(t, chars, CV_RETR_EXTERNAL,
@@ -361,6 +371,7 @@ std::vector<cv::Mat>
 		final_chars.push_back(t(r));
 	}
 
+	#ifdef DEBUG_FINALCHARS
 	++hahaha;
 	for (size_t i = 0; i < final_chars.size(); ++i) {
 		cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
@@ -368,6 +379,7 @@ std::vector<cv::Mat>
 		                std::to_string(i) + ".jpg",
 		            final_chars[i]);
 	}
+	#endif
 
 	return final_chars;
 }
@@ -386,6 +398,15 @@ void
 
 	auto temp = find_text(image_preprocessed);
 
+	std::string plate;
+	std::vector<cv::Rect>    boxes;
+	std::vector<std::string> words;
+	std::vector<float>       confidences;
+	//cv::text::OCRTesseract::create(nullptr, nullptr, nullptr, 0, 7)->run(temp, plate, &boxes, &words, &confidences, 0);
+
+	std::cout << "Detected plate is " << plate << '\n';
+
+#ifdef EXTRACT_CHARACTERS
 	for (const auto& v : temp) {
 		try {
 			characters.push_back(extract_characters(v));
@@ -393,6 +414,7 @@ void
 			std::cout << "detect: " << e.what();
 		}
 	}
+#endif
 }
 
 /**
