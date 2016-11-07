@@ -44,13 +44,4 @@ cv::Point rect_center(const cv::Rect& rect);
 
 void equalizeBrightness(cv::Mat& img);
 
-void drawRotatedRect(cv::Mat& img, const cv::RotatedRect& rect,
-                     const cv::Scalar& color, int thickness = 1);
-
-cv::Size getSizeMaintainingAspect(const cv::Mat& inputImg, int maxWidth,
-                                  int maxHeight);
-
-std::string
-replaceAll(std::string str, const std::string& from, const std::string& to);
-
 void resize_ratio(const cv::Mat& input, cv::Mat& output, int width);

@@ -1,12 +1,14 @@
 #include "binarize_wolf.hpp"
 
-using namespace std;
-using namespace cv;
 
 static double
-calcLocalStats(Mat& im, Mat& map_m, Mat& map_s, int winx, int winy)
+    calcLocalStats(const cv::Mat& im,
+                   cv::Mat& map_m,
+                   cv::Mat& map_s,
+                   int winx,
+                   int winy)
 {
-	Mat im_sum, im_sum_sq;
+	cv::Mat im_sum, im_sum_sq;
 	cv::integral(im, im_sum, im_sum_sq, CV_64F);
 
 	double m, s, max_s, sum, sum_sq;
@@ -32,14 +34,14 @@ calcLocalStats(Mat& im, Mat& map_m, Mat& map_s, int winx, int winy)
 
 		m = sum / winarea;
 		s = sqrt((sum_sq - m * sum) / winarea);
-		if (s > max_s) max_s = s;
+		if (s > max_s)
+			max_s = s;
 
 		map_m.at<float>(j, x_firstth) = m;
 		map_s.at<float>(j, x_firstth) = s;
 
 		// Shift the window, add and remove	new/old values to the histogram
 		for (int i = 1; i <= im.cols - winx; i++) {
-
 			// Remove the left old column and add the right new column
 			sum -= im_sum.at<double>(j - wyh + winy, i) -
 			       im_sum.at<double>(j - wyh, i) -
@@ -61,7 +63,8 @@ calcLocalStats(Mat& im, Mat& map_m, Mat& map_s, int winx, int winy)
 
 			m = sum / winarea;
 			s = sqrt((sum_sq - m * sum) / winarea);
-			if (s > max_s) max_s = s;
+			if (s > max_s)
+				max_s = s;
 
 			map_m.at<float>(j, i + wxh) = m;
 			map_s.at<float>(j, i + wxh) = s;
@@ -71,8 +74,14 @@ calcLocalStats(Mat& im, Mat& map_m, Mat& map_s, int winx, int winy)
 	return max_s;
 }
 
-void NiblackSauvolaWolfJolion(Mat im, Mat output, NiblackVersion version,
-                              int winx, int winy, double k, double dR)
+void
+    NiblackSauvolaWolfJolion(const cv::Mat& im,
+                             cv::Mat& output,
+                             NiblackVersion version,
+                             int winx,
+                             int winy,
+                             double k,
+                             double dR)
 {
 	double m, s, max_s;
 	double th = 0;
@@ -85,36 +94,34 @@ void NiblackSauvolaWolfJolion(Mat im, Mat output, NiblackVersion version,
 	int y_firstth = wyh;
 
 	// Create local statistics and store them in a double matrices
-	Mat map_m = Mat::zeros(im.rows, im.cols, CV_32F);
-	Mat map_s = Mat::zeros(im.rows, im.cols, CV_32F);
+	cv::Mat map_m = cv::Mat::zeros(im.rows, im.cols, CV_32F);
+	cv::Mat map_s = cv::Mat::zeros(im.rows, im.cols, CV_32F);
 	max_s = calcLocalStats(im, map_m, map_s, winx, winy);
 
-	minMaxLoc(im, &min_I, &max_I);
+	cv::minMaxLoc(im, &min_I, &max_I);
 
-	Mat thsurf(im.rows, im.cols, CV_32F);
+	cv::Mat thsurf(im.rows, im.cols, CV_32F);
 
 	// Create the threshold surface, including border processing
 	// ----------------------------------------------------
 
 	for (int j = y_firstth; j <= y_lastth; j++) {
-
 		// NORMAL, NON-BORDER AREA IN THE MIDDLE OF THE WINDOW:
 		for (int i = 0; i <= im.cols - winx; i++) {
-
 			m = map_m.at<float>(j, i + wxh);
 			s = map_s.at<float>(j, i + wxh);
 
 			// Calculate the threshold
 			switch (version) {
-				case NiblackVersion::NIBLACK:
-					th = m + k * s;
-					break;
-				case NiblackVersion::SAUVOLA:
-					th = m * (1 + k * (s / dR - 1));
-					break;
-				case NiblackVersion::WOLFJOLION:
-					th = m + k * (s / max_s - 1) * (m - min_I);
-					break;
+			case NiblackVersion::NIBLACK:
+				th = m + k * s;
+				break;
+			case NiblackVersion::SAUVOLA:
+				th = m * (1 + k * (s / dR - 1));
+				break;
+			case NiblackVersion::WOLFJOLION:
+				th = m + k * (s / max_s - 1) * (m - min_I);
+				break;
 			}
 
 			thsurf.at<float>(j, i + wxh) = th;
@@ -167,9 +174,9 @@ void NiblackSauvolaWolfJolion(Mat im, Mat output, NiblackVersion version,
 
 	for (int y = 0; y < im.rows; ++y) {
 		for (int x = 0; x < im.cols; ++x) {
-			output.at < unsigned
-			char > (y, x) = (im.at < unsigned
-			char > (y, x) >= thsurf.at<float>(y, x)) ? 255 : 0;
+			output.at<unsigned char>(y, x) =
+			    (im.at<unsigned char>(y, x) >= thsurf.at<float>(y, x)) ? 255 :
+			                                                             0;
 		}
 	}
 }

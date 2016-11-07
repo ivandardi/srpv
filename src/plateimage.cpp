@@ -3,6 +3,7 @@
 #include "constants.hpp"
 #include "decorators.hpp"
 #include "linesegment.hpp"
+#include "ocr.hpp"
 #include "plateimage.hpp"
 #include "utility.hpp"
 #include <algorithm>
@@ -10,8 +11,8 @@
 #include <numeric>
 #include <iterator>
 
-#include <opencv2/text.hpp>
 
+#define PREPROCESS
 //#define TIMER
 #define DEBUG
 #define DEBUG_DBSCAN
@@ -20,10 +21,9 @@
 
 //#define EXTRACT_CHARACTERS
 
-int hahaha = 0;
+int img_id = 0;
 cv::Mat image_debug;
 using namespace std::literals;
-
 
 
 namespace
@@ -39,23 +39,23 @@ auto produceThresholds(const cv::Mat& img_gray, cv::Size se_size, int morph_op)
 
 	// Wolf
 	int k = 0, win = 18;
-	NiblackSauvolaWolfJolion(img_gray, thresh, NiblackVersion::WOLFJOLION, win, win,
-	                         0.05 + (k * 0.35));
+	NiblackSauvolaWolfJolion(img_gray, thresh, NiblackVersion::WOLFJOLION, win,
+	                         win, 0.05 + (k * 0.35));
 	cv::bitwise_not(thresh, thresh);
 
 
 #ifdef DEBUG
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-	                std::to_string(++hahaha) + "thresh.jpg",
+	                std::to_string(++img_id) + "thresh.jpg",
 	            thresh);
 #endif
 
-	auto elem = cv::getStructuringElement(cv::MORPH_ELLIPSE, se_size);
+	auto elem = cv::getStructuringElement(cv::MORPH_RECT, se_size);
 	cv::morphologyEx(thresh, thresh, morph_op, elem, {-1, -1});
 
 #ifdef DEBUG
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-	                std::to_string(++hahaha) + "threshandmorph.jpg",
+	                std::to_string(++img_id) + "threshandmorph.jpg",
 	            thresh);
 #endif
 
@@ -105,7 +105,7 @@ void
 		cv::rectangle(image_disp, r, Color::WHITE, 1);
 	}
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-	                std::to_string(++hahaha) + "find_characters.jpg",
+	                std::to_string(++img_id) + "find_characters.jpg",
 	            image_disp);
 #endif
 }
@@ -184,7 +184,7 @@ void
 		cv::rectangle(image_disp, r, Color::WHITE, 1);
 	}
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-	                std::to_string(++hahaha) + "filter_small_rects.jpg",
+	                std::to_string(++img_id) + "filter_small_rects.jpg",
 	            image_disp);
 #endif
 }
@@ -226,7 +226,7 @@ std::vector<std::vector<cv::Rect>>
 		}
 	}
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-	                std::to_string(++hahaha) + "filter_dbscan.jpg",
+	                std::to_string(++img_id) + "filter_dbscan.jpg",
 	            image_disp);
 #endif
 
@@ -267,11 +267,11 @@ cv::Mat
 	cv::warpPerspective(image_preprocessed, image_transformed, transformation,
 	                    {desired_width, desired_height});
 
-	#ifdef DEBUG_UNWARP
+#ifdef DEBUG_UNWARP
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-	                std::to_string(++hahaha) + "unwarp_characters.jpg",
+	                std::to_string(++img_id) + "unwarp_characters.jpg",
 	            image_transformed);
-	#endif
+#endif
 
 	return image_transformed;
 }
@@ -296,11 +296,13 @@ void
 	cv::createCLAHE(2.0, {8, 8})->apply(temp, temp);
 
 	// Blur, but keep the edges
+	// ALPR: 3, 45, 45
+	// Possibility: adaptiveBilateralFilter ?
 	cv::bilateralFilter(temp, image_preprocessed, 5, 40, 40);
 
-#ifdef DEBUG
+#ifdef PREPROCESS
 	cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-	                std::to_string(++hahaha) + "preprocess.jpg",
+	                std::to_string(++img_id) + "preprocess.jpg",
 	            image_preprocessed);
 #endif
 }
@@ -315,7 +317,8 @@ std::vector<cv::Mat>
 {
 	const Config& cfg = Config::instance();
 
-	auto threshold = produceThresholds(image_preprocessed, {3, 3}, cv::MORPH_OPEN);
+	auto threshold =
+	    produceThresholds(image_preprocessed, {3, 3}, cv::MORPH_OPEN);
 
 	std::vector<cv::Rect> chars;
 	find_characters(threshold, chars, CV_RETR_LIST,
@@ -334,6 +337,8 @@ std::vector<cv::Mat>
 	                             cfg.find_text.filter_dbscan.min_pts);
 #endif
 
+	// Add expand regions
+
 	std::vector<cv::Mat> warped;
 	for (const auto& v : regions) {
 		warped.push_back(unwarp_characters(image_preprocessed, v));
@@ -348,7 +353,7 @@ std::vector<cv::Mat>
 {
 	const Config& cfg = Config::instance();
 
-	auto t = produceThresholds(img, {3, 3}, cv::MORPH_OPEN);
+	auto t = produceThresholds(img, {2, 2}, cv::MORPH_OPEN);
 
 	std::vector<cv::Rect> chars;
 	find_characters(t, chars, CV_RETR_EXTERNAL,
@@ -371,15 +376,15 @@ std::vector<cv::Mat>
 		final_chars.push_back(t(r));
 	}
 
-	#ifdef DEBUG_FINALCHARS
-	++hahaha;
+#ifdef DEBUG_FINALCHARS
+	++img_id;
 	for (size_t i = 0; i < final_chars.size(); ++i) {
 		cv::imwrite(Path::DST + std::to_string(Path::image_count) + "_" +
-		                std::to_string(hahaha) + "finalchar_" +
+		                std::to_string(img_id) + "finalchar_" +
 		                std::to_string(i) + ".jpg",
 		            final_chars[i]);
 	}
-	#endif
+#endif
 
 	return final_chars;
 }
@@ -398,13 +403,10 @@ void
 
 	auto temp = find_text(image_preprocessed);
 
-	std::string plate;
-	std::vector<cv::Rect>    boxes;
-	std::vector<std::string> words;
-	std::vector<float>       confidences;
-	//cv::text::OCRTesseract::create(nullptr, nullptr, nullptr, 0, 7)->run(temp, plate, &boxes, &words, &confidences, 0);
-
-	std::cout << "Detected plate is " << plate << '\n';
+	for (auto& img : temp) {
+		OCR ocr(img);
+		std::cout << "Detected plate is " << ocr.text << '\n';
+	}
 
 #ifdef EXTRACT_CHARACTERS
 	for (const auto& v : temp) {
@@ -427,7 +429,7 @@ PlateImage::PlateImage(const cv::Mat& img)
 , image_preprocessed()
 , characters()
 {
-	hahaha = 0;
+	img_id = 0;
 	++Path::image_count;
 
 	std::cout << "====================\n";

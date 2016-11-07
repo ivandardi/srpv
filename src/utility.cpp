@@ -23,17 +23,6 @@ void equalizeBrightness(cv::Mat& img)
 	img.convertTo(img, CV_8U); // convert back to unsigned int
 }
 
-void drawRotatedRect(cv::Mat& img, const cv::RotatedRect& rect,
-                     const cv::Scalar& color, int thickness)
-{
-	cv::Point2f rect_points[4];
-	rect.points(rect_points);
-	cv::line(img, rect_points[0], rect_points[1], color, thickness, 8);
-	cv::line(img, rect_points[1], rect_points[2], color, thickness, 8);
-	cv::line(img, rect_points[2], rect_points[3], color, thickness, 8);
-	cv::line(img, rect_points[3], rect_points[0], color, thickness, 8);
-}
-
 double distanceBetweenPoints(const cv::Point& p1, const cv::Point& p2)
 {
 	return std::hypot(std::abs(p2.x - p1.x), std::abs(p2.y - p1.y));
@@ -49,30 +38,6 @@ double angleBetweenPoints(const cv::Point& p1, const cv::Point& p2)
 cv::Point rect_center(const cv::Rect& rect)
 {
 	return {rect.x + rect.width / 2, rect.y + rect.height / 2};
-}
-
-cv::Size getSizeMaintainingAspect(const cv::Mat& inputImg, int maxWidth,
-                                  int maxHeight)
-{
-	double aspect =
-	static_cast<double>(inputImg.cols) / static_cast<double>(inputImg.rows);
-
-	if (maxWidth / aspect > maxHeight) {
-		return {maxHeight * aspect, maxHeight};
-	} else {
-		return {maxWidth, maxWidth / aspect};
-	}
-}
-
-std::string
-replaceAll(std::string str, const std::string& from, const std::string& to)
-{
-	size_t start_pos = 0;
-	while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
-		str.replace(start_pos, from.length(), to);
-		start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
-	}
-	return str;
 }
 
 void resize_ratio(const cv::Mat& input, cv::Mat& output, int width)

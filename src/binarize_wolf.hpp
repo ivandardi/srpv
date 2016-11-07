@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include <iostream>
-#include "opencv2/opencv.hpp"
+#include <opencv2/opencv.hpp>
 
 enum class NiblackVersion {
 	NIBLACK = 0,
@@ -10,8 +10,10 @@ enum class NiblackVersion {
 	WOLFJOLION,
 };
 
-void
-NiblackSauvolaWolfJolion(cv::Mat im, cv::Mat output, NiblackVersion version,
-                         int winx, int winy, double k,
-                         double dR = 128);
-
+void NiblackSauvolaWolfJolion(const cv::Mat& im,
+                              cv::Mat& output,
+                              NiblackVersion version,
+                              int winx,
+                              int winy,
+                              double k,
+                              double dR = 128);

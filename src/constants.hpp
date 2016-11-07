@@ -24,10 +24,10 @@ namespace Plate
 {
 	constexpr double IDEAL_PLATE_WIDTH = 400.0;
 	constexpr double IDEAL_PLATE_HEIGHT = 130.0;
-	constexpr double IDEAL_PLATE_RATIO = 400.0 / 130.0;
+	constexpr double IDEAL_PLATE_RATIO = IDEAL_PLATE_WIDTH / IDEAL_PLATE_HEIGHT;
 
 	constexpr double IDEAL_CHAR_WIDTH = 50.0;
 	constexpr double IDEAL_CHAR_HEIGHT = 79.0;
-	constexpr double IDEAL_CHAR_RATIO = 50.0 / 79.0;
+	constexpr double IDEAL_CHAR_RATIO = IDEAL_CHAR_WIDTH / IDEAL_CHAR_HEIGHT;
 	constexpr double IDEAL_CHARPLATE_RATIO = 5.5;
 }
