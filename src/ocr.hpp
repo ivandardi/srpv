@@ -9,16 +9,16 @@ namespace srpv
 {
 class OCR
 {
-  public:
+public:
 	OCR(cv::Mat& img);
 
-  public:
+public:
 	std::string text;
 	std::vector<cv::Rect> boxes;
 	std::vector<std::string> words;
 	std::vector<float> confidences;
 
-  private:
+private:
 	const cv::Mat& img;
 	cv::Ptr<cv::text::OCRTesseract> ocr;
 };

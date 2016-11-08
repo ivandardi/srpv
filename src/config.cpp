@@ -30,7 +30,7 @@ Config::Config()
 }
 
 const Config&
-    Config::instance()
+Config::instance()
 {
 	static Config c;
 	return c;

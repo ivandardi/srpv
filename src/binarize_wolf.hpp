@@ -1,8 +1,8 @@
 #pragma once
 
-#include <stdio.h>
 #include <iostream>
 #include <opencv2/opencv.hpp>
+#include <stdio.h>
 
 namespace srpv
 {
@@ -12,8 +12,8 @@ enum class NiblackVersion {
 	WOLFJOLION,
 };
 
-void NiblackSauvolaWolfJolion(const cv::Mat& im,
-                              cv::Mat& output,
+void NiblackSauvolaWolfJolion(const cv::Mat &im,
+                              cv::Mat &output,
                               NiblackVersion version,
                               int winx,
                               int winy,

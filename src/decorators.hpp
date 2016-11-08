@@ -5,12 +5,11 @@
 #include <type_traits>
 #include <utility>
 
-
 template <class F, class... Args>
 typename std::enable_if_t<
     std::is_void<typename std::result_of_t<F(Args...)>>::value,
     void>
-timer(const std::string& name, F&& f, Args... args)
+    timer(const std::string &name, F &&f, Args... args)
 {
 	using std::chrono::steady_clock;
 	using std::chrono::duration_cast;
@@ -27,7 +26,7 @@ template <class F, class... Args>
 typename std::enable_if_t<
     !std::is_void<typename std::result_of_t<F(Args...)>>::value,
     typename std::result_of_t<F(Args...)>>
-timer(const std::string& name, F&& f, Args... args)
+    timer(const std::string &name, F &&f, Args... args)
 {
 	using std::chrono::steady_clock;
 	using std::chrono::duration_cast;

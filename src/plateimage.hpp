@@ -2,8 +2,8 @@
 
 #include <opencv2/opencv.hpp>
 
-namespace srpv {
-
+namespace srpv
+{
 struct PlateImage {
 	PlateImage(const cv::Mat& img);
 
@@ -11,5 +11,4 @@ struct PlateImage {
 	cv::Mat image_preprocessed;
 	std::vector<std::vector<cv::Mat>> characters;
 };
-
 }

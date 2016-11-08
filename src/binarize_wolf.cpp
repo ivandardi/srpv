@@ -1,12 +1,11 @@
 #include "binarize_wolf.hpp"
 
-
 static double
-    calcLocalStats(const cv::Mat& im,
-                   cv::Mat& map_m,
-                   cv::Mat& map_s,
-                   int winx,
-                   int winy)
+calcLocalStats(const cv::Mat &im,
+               cv::Mat &map_m,
+               cv::Mat &map_s,
+               int winx,
+               int winy)
 {
 	cv::Mat im_sum, im_sum_sq;
 	cv::integral(im, im_sum, im_sum_sq, CV_64F);
@@ -77,13 +76,13 @@ static double
 namespace srpv
 {
 void
-    NiblackSauvolaWolfJolion(const cv::Mat& im,
-                             cv::Mat& output,
-                             NiblackVersion version,
-                             int winx,
-                             int winy,
-                             double k,
-                             double dR)
+NiblackSauvolaWolfJolion(const cv::Mat &im,
+                         cv::Mat &output,
+                         NiblackVersion version,
+                         int winx,
+                         int winy,
+                         double k,
+                         double dR)
 {
 	double m, s, max_s;
 	double th = 0;

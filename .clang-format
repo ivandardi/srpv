@@ -1,7 +1,7 @@
 ---
 Language:        Cpp
 BasedOnStyle:  Mozilla
-AccessModifierOffset: -2
+AccessModifierOffset: -4
 AlignAfterOpenBracket: true
 AlignEscapedNewlinesLeft: true
 AlignOperands: true
@@ -27,17 +27,16 @@ ConstructorInitializerIndentWidth: 0
 DerivePointerAlignment: true
 ExperimentalAutoDetectBinPacking: false
 IndentCaseLabels: false
-IndentWrappedFunctionNames: true
-IndentFunctionDeclarationAfterType: true
+IndentWrappedFunctionNames: false
+IndentFunctionDeclarationAfterType: false
 MaxEmptyLinesToKeep: 2
 KeepEmptyLinesAtTheStartOfBlocks: false
 NamespaceIndentation: Inner
 PenaltyBreakBeforeFirstCallParameter: 1000
-PenaltyBreakComment: 10
-PenaltyBreakString: 1000
+PenaltyBreakComment: 1000
+PenaltyBreakString: 1000000
 PenaltyBreakFirstLessLess: 120
-PenaltyExcessCharacter: 1000
-PenaltyReturnTypeOnItsOwnLine: 1000
+PenaltyExcessCharacter: 100000
 PointerAlignment: Left
 SpacesBeforeTrailingComments: 1
 Cpp11BracedListStyle: true

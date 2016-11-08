@@ -1,8 +1,8 @@
+#include "constants.hpp"
+#include "plateimage.hpp"
+#include "utility.hpp"
 #include <bits/stdc++.h>
 #include <opencv2/opencv.hpp>
-#include "utility.hpp"
-#include "plateimage.hpp"
-#include "constants.hpp"
 
 using namespace cv;
 using namespace std;
@@ -14,9 +14,9 @@ using namespace std;
  * argv[4] = end frame
  *
  */
-int main(int argc, char** argv)
+int
+main(int argc, char **argv)
 {
-
 	if (argc < 5) {
 		cout << "Argument error";
 		return -1;
@@ -26,8 +26,8 @@ int main(int argc, char** argv)
 	srpv::Path::SRC = argv[2];
 	srpv::Path::DST = argv[3];
 	size_t frames_begin = std::stoi(argv[4]);
-	size_t frames_end = (argc >= 6) ? std::stoull(argv[5])
-	                               : std::numeric_limits<int>::max();
+	size_t frames_end =
+	    (argc >= 6) ? std::stoull(argv[5]) : std::numeric_limits<int>::max();
 
 	cv::VideoCapture cap(srpv::Path::SRC);
 	if (!cap.isOpened()) {
@@ -49,7 +49,7 @@ int main(int argc, char** argv)
 		}
 		try {
 			srpv::PlateImage img(frame);
-		} catch (const std::exception& e) {
+		} catch (const std::exception &e) {
 			std::cerr << "SRPV EXCEPTION: " << e.what() << '\n';
 		}
 	}

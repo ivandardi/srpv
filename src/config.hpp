@@ -8,7 +8,7 @@ namespace srpv
 {
 class Config
 {
-  public:
+public:
 	struct {
 		struct {
 			double precision_min;
@@ -31,18 +31,18 @@ class Config
 		} find_characters;
 	} extract_characters;
 
-  public:
-	static const Config& instance();
+public:
+	static const Config &instance();
 
-	Config(const Config&) = delete;
+	Config(const Config &) = delete;
 
-	Config(Config&&) = delete;
+	Config(Config &&) = delete;
 
-	Config& operator=(const Config&) = delete;
+	Config &operator=(const Config &) = delete;
 
-	Config& operator=(Config&&) = delete;
+	Config &operator=(Config &&) = delete;
 
-  private:
+private:
 	Config();
 };
 }
