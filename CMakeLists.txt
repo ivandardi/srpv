@@ -24,7 +24,6 @@ add_executable(${PROJECT_NAME}
 	src/plateimage.cpp
 	src/binarize_wolf.cpp
 	src/constants.cpp
-	src/linesegment.cpp
 	src/config.cpp
 	src/ocr.cpp
 )

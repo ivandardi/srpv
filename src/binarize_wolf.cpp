@@ -74,6 +74,8 @@ static double
 	return max_s;
 }
 
+namespace srpv
+{
 void
     NiblackSauvolaWolfJolion(const cv::Mat& im,
                              cv::Mat& output,
@@ -179,4 +181,5 @@ void
 			                                                             0;
 		}
 	}
+}
 }

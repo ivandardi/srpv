@@ -4,6 +4,8 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 
+namespace srpv
+{
 enum class NiblackVersion {
 	NIBLACK = 0,
 	SAUVOLA,
@@ -17,3 +19,4 @@ void NiblackSauvolaWolfJolion(const cv::Mat& im,
                               int winy,
                               double k,
                               double dR = 128);
+}

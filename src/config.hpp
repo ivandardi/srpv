@@ -4,11 +4,11 @@
 #include <fstream>
 
 using json = nlohmann::json;
-
+namespace srpv
+{
 class Config
 {
-public:
-
+  public:
 	struct {
 		struct {
 			double precision_min;
@@ -31,8 +31,7 @@ public:
 		} find_characters;
 	} extract_characters;
 
-public:
-
+  public:
 	static const Config& instance();
 
 	Config(const Config&) = delete;
@@ -43,12 +42,7 @@ public:
 
 	Config& operator=(Config&&) = delete;
 
-private:
-
+  private:
 	Config();
-
 };
-
-
-
-
+}

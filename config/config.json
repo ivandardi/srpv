@@ -10,7 +10,7 @@
     },
     "filter_dbscan": {
       "eps": 75,
-      "min_pts": 7
+      "min_pts": 5
     }
   },
   "extract_characters": {

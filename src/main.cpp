@@ -22,14 +22,14 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	Path::CFG = argv[1];
-	Path::SRC = argv[2];
-	Path::DST = argv[3];
+	srpv::Path::CFG = argv[1];
+	srpv::Path::SRC = argv[2];
+	srpv::Path::DST = argv[3];
 	size_t frames_begin = std::stoi(argv[4]);
 	size_t frames_end = (argc >= 6) ? std::stoull(argv[5])
 	                               : std::numeric_limits<int>::max();
 
-	cv::VideoCapture cap(Path::SRC);
+	cv::VideoCapture cap(srpv::Path::SRC);
 	if (!cap.isOpened()) {
 		std::cerr << "Video failed to open\n";
 		return -1;
@@ -48,7 +48,7 @@ int main(int argc, char** argv)
 			break;
 		}
 		try {
-			PlateImage img(frame);
+			srpv::PlateImage img(frame);
 		} catch (const std::exception& e) {
 			std::cerr << "SRPV EXCEPTION: " << e.what() << '\n';
 		}

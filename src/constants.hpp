@@ -3,6 +3,8 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 
+namespace srpv
+{
 namespace Path
 {
 	extern std::string CFG;
@@ -30,4 +32,5 @@ namespace Plate
 	constexpr double IDEAL_CHAR_HEIGHT = 79.0;
 	constexpr double IDEAL_CHAR_RATIO = IDEAL_CHAR_WIDTH / IDEAL_CHAR_HEIGHT;
 	constexpr double IDEAL_CHARPLATE_RATIO = 5.5;
+}
 }

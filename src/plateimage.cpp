@@ -2,7 +2,6 @@
 #include "config.hpp"
 #include "constants.hpp"
 #include "decorators.hpp"
-#include "linesegment.hpp"
 #include "ocr.hpp"
 #include "plateimage.hpp"
 #include "utility.hpp"
@@ -12,19 +11,22 @@
 #include <iterator>
 
 
-#define PREPROCESS
 //#define TIMER
 #define DEBUG
 #define DEBUG_DBSCAN
 #define DEBUG_UNWARP
 #define DEBUG_FINALCHARS
 
+#define PREPROCESS
 //#define EXTRACT_CHARACTERS
 
 int img_id = 0;
 cv::Mat image_debug;
 using namespace std::literals;
 
+
+namespace srpv
+{
 
 namespace
 {
@@ -337,7 +339,7 @@ std::vector<cv::Mat>
 	                             cfg.find_text.filter_dbscan.min_pts);
 #endif
 
-	// Add expand regions
+	// TODO: Add expand regions
 
 	std::vector<cv::Mat> warped;
 	for (const auto& v : regions) {
@@ -440,4 +442,5 @@ PlateImage::PlateImage(const cv::Mat& img)
 #else
 	detect(image_original, image_preprocessed, characters);
 #endif
+}
 }
