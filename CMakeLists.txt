@@ -3,9 +3,10 @@ cmake_minimum_required(VERSION 2.8)
 set(PROJECT_NAME "srpv")
 project(${PROJECT_NAME})
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z -O3 -Wall -Wextra -Wfatal-errors -fopenmp -ffast-math")
-set(CMAKE_CXX_COMPILER "/usr/bin/g++-6")
-set(CMAKE_C_COMPILER "/usr/bin/gcc-6")
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -Wfatal-errors -fopenmp -ffast-math -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_CXX_FLAGS_DEBUG "-g3" CACHE STRING "Debug CXX compiler flags" FORCE)
@@ -18,7 +19,6 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 include_directories(
 	${CMAKE_SOURCE_DIR}/include
-	${CMAKE_SOURCE_DIR}/include/json
 )
 
 find_package(OpenCV REQUIRED)

@@ -5,8 +5,8 @@
       "precision_max": 1.25
     },
     "filter_small_rects": {
-      "min_area": 150,
-      "max_area": 600
+      "min_area": 250,
+      "max_area": 2000
     },
     "filter_dbscan": {
       "eps": 75,
