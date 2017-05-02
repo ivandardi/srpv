@@ -1,0 +1,34 @@
+Pipeline1                             | Image -> List[str]
+    Preprocessor                      | Image -> Image
+        GrayscaleThumbnail            | Image -> Image
+            Thumbnail                 | Image -> Image
+            ToGrayscale               | Image -> Image
+        CLAHE                         | Image -> Image
+        BilateralFilter               | Image -> Image
+        AdaptiveThreshold             | Image -> Image
+    PlateFinder                       | Image -> List[Image]
+        Contours                      | Image -> (contours -> hierarchy)
+        CharacterRatioFilter          | contours -> hierarchy -> List[Rect]
+        SizeFilter                    | List[Rect] -> List[Rect]
+        KMeansClusterer               | List[Rect] -> List[List[Rect]]
+        UnwarpRegions                 | List[List[Rect]] -> List[Image]
+    PlateClassifier                   | List[List[Rect]] -> List[str]
+        DetectPlate                   | List[str] -> List[str]
+
+Pipeline2                             | Image -> Image
+    Preprocessor                      | Image -> Image
+        GrayscaleThumbnail            | Image -> Image
+            Thumbnail                 | Image -> Image
+            ToGrayscale               | Image -> Image
+        CLAHE                         | Image -> Image
+        BilateralFilter               | Image -> Image
+        AdaptiveThreshold             | Image -> Image
+    PlateFinder                       | Image -> List[Image]
+        Contours                      | Image -> (contours -> hierarchy)
+        CharacterRatioFilter          | contours -> hierarchy -> List[Rect]
+        SizeFilter                    | List[Rect] -> List[Rect]
+        KMeansClusterer               | List[Rect] -> List[List[Rect]]
+        UnwarpRegions                 | List[List[Rect]] -> List[Image]
+    PlateClassifier                   | List[List[Rect]] -> List[str]
+        ExtractCharacters
+        DetectCharacter

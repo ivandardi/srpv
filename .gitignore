@@ -1,47 +1,7 @@
-# Project Folders
+# Misc
 .*/
-build*/
-external/
-Images/
-Analises/
+videos/
 
-# Images
-*.jpg
-*.png
-
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-*.cmake
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -88,6 +48,7 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *,cover
+.hypothesis/
 
 # Translations
 *.mo
@@ -95,9 +56,39 @@ coverage.xml
 
 # Django stuff:
 *.log
+local_settings.py
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
 
 # Sphinx documentation
 docs/_build/
 
 # PyBuilder
 target/
+
+# IPython Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# celery beat schedule file
+celerybeat-schedule
+
+# dotenv
+.env
+
+# virtualenv
+venv/
+ENV/
+
+# Spyder project settings
+.spyderproject
+
+# Rope project settings
+.ropeproject
