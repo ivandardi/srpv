@@ -1,0 +1,22 @@
+{
+  "find_text": {
+    "find_characters": {
+      "precision_min": 0.5,
+      "precision_max": 1.25
+    },
+    "filter_small_rects": {
+      "min_area": 250,
+      "max_area": 2000
+    },
+    "filter_dbscan": {
+      "eps": 75,
+      "min_pts": 5
+    }
+  },
+  "extract_characters": {
+    "find_characters": {
+      "precision_min": 0.75,
+      "precision_max": 1.2
+    }
+  }
+}

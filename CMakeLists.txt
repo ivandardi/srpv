@@ -1,39 +1,45 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.3)
 
-set(PROJECT_NAME "srpv")
+set(PROJECT_NAME "SRPV")
 project(${PROJECT_NAME})
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -Wfatal-errors -fopenmp -ffast-math -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined")
+set(EXT_PROJECTS_DIR ${CMAKE_SOURCE_DIR}/external)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_CXX_FLAGS_DEBUG "-g3" CACHE STRING "Debug CXX compiler flags" FORCE)
-    set(CMAKE_C_FLAGS_DEBUG "-g3" CACHE STRING "Debug C compiler flags" FORCE)
-endif()
+###############################################################################
+## Library srpv
+###############################################################################
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-include_directories(
-	${CMAKE_SOURCE_DIR}/include
+add_compile_options(-O3)
+add_compile_options(-Wall)
+add_compile_options(-Wextra)
+add_compile_options(-Wfatal-errors)
+add_compile_options(-fopenmp)
+add_compile_options(-ffast-math)
+add_compile_options(-fsanitize=address)
+add_compile_options(-fno-omit-frame-pointer)
+add_compile_options(-fsanitize=undefined)
+
+include_directories(${PROJECT_NAME}
+    ${CMAKE_SOURCE_DIR}/include
+    ${EXT_PROJECTS_DIR}/include
+)
+
+set(SRPV_SOURCE_FILES
+    src/find_text/binarize_wolf.cpp
+    src/find_text/plateimage.cpp
+    src/preprocess/preprocess.cpp
+    src/config.cpp
+    src/constants.cpp
+    src/recognizer.cpp
+    src/utility.cpp
+    src/main.cpp
 )
 
 find_package(OpenCV REQUIRED)
 
-add_executable(${PROJECT_NAME}
-	src/main.cpp
-	src/utility.cpp
-	src/plateimage.cpp
-	src/binarize_wolf.cpp
-	src/constants.cpp
-	src/config.cpp
-	src/ocr.cpp
-)
-
+add_executable(${PROJECT_NAME} ${SRPV_SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
-
-message("CMAKE_C_FLAGS ${CMAKE_C_FLAGS}")
-message("CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}")

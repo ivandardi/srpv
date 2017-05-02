@@ -4,6 +4,8 @@ IndentWidth: 4
 ColumnLimit: 0
 ---
 Language: Cpp
+AccessModifierOffset: -4
+AllowShortFunctionsOnASingleLine: None
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterClass: true
@@ -20,5 +22,6 @@ BreakConstructorInitializersBeforeComma: true
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ConstructorInitializerIndentWidth: 0
 Cpp11BracedListStyle: true
+DerivePointerAlignment: false
+PointerAlignment: Left
 ...
-

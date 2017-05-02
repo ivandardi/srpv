@@ -1,13 +1,13 @@
 # Project Folders
-.idea
+.*/
+build*/
+external/
 Images/
 Analises/
 
 # Images
 *.jpg
 *.png
-
-
 
 # Prerequisites
 *.d
