@@ -68,8 +68,3 @@ class Region(ABCRect):
 
     def __repr__(self):
         return f'Region({self.__dict__})'
-
-
-class Oval:
-    def __init__(self, *args):
-        self.x, self.y, self.major_axis, self.minor_axis, self.angle = args[0] if len(args) == 1 else args

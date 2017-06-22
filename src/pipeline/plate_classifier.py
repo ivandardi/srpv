@@ -18,7 +18,6 @@ class DetectPlate(Pipeline):
             psmode=7,
         )
 
-
     def apply(self, package: Package):
         images = package.latest_pipeline_data
         package.pipeline_data['DetectPlate'] = [self.ocr.run(img, np.ones_like(img), 0) for img in images]

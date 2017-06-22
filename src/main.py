@@ -49,7 +49,7 @@ def main():
     os.mkdir(path)
 
     # frame_list = generate_frames_from_video(f'assets/videos/{video}.mp4')
-    frame_list = get_images_from_dir('/home/ivan/Dropbox/srpv/assets/images/')
+    frame_list = get_images_from_dir('/assets/images/')
 
     for i, frame in enumerate(frame_list):
         try:

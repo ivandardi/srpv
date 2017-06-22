@@ -3,8 +3,8 @@ from abc import ABC
 from collections import OrderedDict
 from typing import Callable, Iterable
 
-import numpy as np
 import cv2
+import numpy as np
 
 log = logging.getLogger(__name__)
 

@@ -89,28 +89,6 @@ def horizontality_check(package: Package):
 
 def unwarp_regions(package: Package):
     clusters = package.latest_pipeline_data
-    img = package.threshold_image
-
-    # fix to be binary again
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    img[img != 0] = 255
-
-    unwarped = []
-    for cluster in clusters:
-        top = min(rect.top for rect in cluster)
-        bottom = max(rect.bottom for rect in cluster)
-        left = min(rect.left for rect in cluster)
-        right = max(rect.right for rect in cluster)
-
-        unwarped.append(img[top:bottom, left:right])
-
-    package.pipeline_data['UnwarpRegions'] = unwarped
-    for i, img in enumerate(package.latest_pipeline_data):
-        package.images[f'UnwarpRegions_{i}'] = img
-
-
-def unwarp_regions_old(package: Package):
-    clusters = package.latest_pipeline_data
     unwarped = [unwarp_region(cluster, package.threshold_image) for cluster in clusters]
     package.pipeline_data['UnwarpRegions'] = unwarped
     for i, img in enumerate(package.latest_pipeline_data):
@@ -169,77 +147,3 @@ def extract_characters(package: Package):
 
     list_of_plates = list(map(extract, regions))
     package.pipeline_data['IsolatedChars'] = list_of_plates
-
-
-def extract_characters_stats(package: Package):
-    ideal_character_ratio = 50 / 79
-
-    images = package.latest_pipeline_data
-
-    list_of_plates = []
-    for img in images:
-
-        # improve images
-        for i in range(2):
-            log.debug('filter_biggest_contour %s\n%s', i, img)
-            img = morph_close(img)
-            img = filter_biggest_contour(img)
-
-        height, width = img.shape
-        stride = int(height * ideal_character_ratio)
-        wiggle = 5
-
-        def left_stride(i):
-            return max(0, stride * i - wiggle)
-
-        def right_stride(i):
-            return stride * (i + 1) + wiggle
-
-        # Pegando os 3 caracteres da esquerda
-        chars_esq = [img[0:height, left_stride(i):right_stride(i)] for i in range(3)]
-
-        def left_stride(i):
-            return width - stride * (i + 1) - wiggle
-
-        def right_stride(i):
-            return width - stride * i + wiggle
-
-        # Pegando os 4 numeros da direita
-        chars_dir = [img[0:height, left_stride(i):right_stride(i)] for i in reversed(range(4))]
-
-        plate = chars_esq + chars_dir
-
-        list_of_plates.append(plate)
-
-        # package.pipeline_data['IsolatedChars'] = list_of_plates
-
-
-def morph_close(plate):
-    log.debug(plate[0])
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-    morphed = [cv2.morphologyEx(char, cv2.MORPH_CLOSE, kernel) for char in plate]
-    return morphed
-
-
-def filter_biggest_contour(plate):
-    filtered_contours = [list(map(contour_filter, char)) for char in plate]
-    return filtered_contours
-
-
-def contour_filter(char):
-    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(char)
-
-    if len(stats) < 2:
-        raise RuntimeError('No character in character crop!')
-
-    stats = list(enumerate(stats))[1:]
-    stats.sort(key=lambda x: x[1][4], reverse=True)  # sort by area of contour
-
-    largest_index, largest_comp = stats[0]
-
-    bounds = Rect(largest_comp[:4])
-    img = labels[bounds.top:bounds.bottom, bounds.left:bounds.right]
-    img[img != largest_index] = 255
-    img[img == largest_index] = 0
-
-    return img
