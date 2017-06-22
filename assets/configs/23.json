@@ -1,6 +1,0 @@
-{
-  "min_precision": 0.5,
-  "max_precision": 1.25,
-  "min_area": 500,
-  "max_area": 1200
-}

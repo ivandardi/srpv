@@ -1,39 +1,21 @@
-import cv2
-import matplotlib.pyplot as plt
+import logging
 
-from . import Pipeline, Package
+import numpy as np
+from skimage.filters.thresholding import _mean_std as mean_std
 
+from . import Package
 
-# TODO add Wolfjolion thresholding
-
-class OtsuThreshold(Pipeline):
-    def __init__(self):
-        super().__init__()
-
-    def apply(self, package: Package):
-        fig, ax = plt.subplots()
-        ax.hist(package.current_image.ravel(), 256)
-        fig.show()
-        otsu_value, package.images['Threshold'] = cv2.threshold(package.current_image, 0, 255,
-                                                                cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+log = logging.getLogger(__name__)
 
 
-class AdaptiveThreshold(Pipeline):
-    def __init__(self, thresholdType, blockSize, C):
-        """
-        thresholdType	Thresholding type that must be either THRESH_BINARY or THRESH_BINARY_INV, see cv::ThresholdTypes.
-        blockSize	Size of a pixel neighborhood that is used to calculate a threshold value for the pixel: 3, 5, 7, and so on.
-        C	Constant subtracted from the mean or weighted mean (see the details below). Normally, it is positive but may be zero or negative as well.
-        """
-        super().__init__()
-        self.thresholdType = thresholdType
-        self.blockSize = blockSize
-        self.C = C
+class WolfJolionThreshold:
+    def __init__(self, window_size=15, k=0.2):
+        self.window_size = window_size
+        self.k = k
 
-    def apply(self, package: Package):
-        fig, ax = plt.subplots()
-        ax.hist(package.current_image.ravel(), 256)
-        fig.show()
-        package.images['Threshold'] = cv2.adaptiveThreshold(package.current_image, 255,
-                                                            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                                            self.thresholdType, self.blockSize, self.C)
+    def __call__(self, package: Package):
+        image = package.current_image
+        m, s = mean_std(image, self.window_size)
+        mask = m + self.k * ((s / np.max(s)) - 1) * (m - np.min(image))
+        thresh = (image > mask) * 255
+        package.images['Threshold'] = thresh.astype(dtype=np.uint8)

@@ -1,7 +1,9 @@
 # Misc
 .*/
-videos/
-
+assets/videos/
+assets/videos_sources/*
+assets/images/
+assets/analysis/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

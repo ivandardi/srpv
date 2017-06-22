@@ -1,12 +1,7 @@
 import cv2
 
-from . import Pipeline, Package
+from .definitions import Package
 
 
-class CLAHE(Pipeline):
-    def __init__(self, *args, **kwargs):
-        super().__init__()
-        self.clahe = cv2.createCLAHE(*args, **kwargs)
-
-    def apply(self, package: Package):
-        package.images['CLAHE'] = self.clahe.apply(package.current_image)
+def equalize_histogram(package: Package, *args, **kwargs):
+    package.images['CLAHE'] = cv2.createCLAHE(*args, **kwargs).apply(package.current_image)

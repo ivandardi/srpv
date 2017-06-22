@@ -1,34 +1,16 @@
-Pipeline1                             | Image -> List[str]
+Pipeline                              | Image -> List[str]
     Preprocessor                      | Image -> Image
-        GrayscaleThumbnail            | Image -> Image
-            Thumbnail                 | Image -> Image
-            ToGrayscale               | Image -> Image
-        CLAHE                         | Image -> Image
+        thumbnail                     | Image -> Image
+        to_grayscale                  | Image -> Image
+        equalize_histogram            | Image -> Image
         BilateralFilter               | Image -> Image
-        AdaptiveThreshold             | Image -> Image
+        WolfJolionThreshold           | Image -> Image
     PlateFinder                       | Image -> List[Image]
-        Contours                      | Image -> (contours -> hierarchy)
-        CharacterRatioFilter          | contours -> hierarchy -> List[Rect]
-        SizeFilter                    | List[Rect] -> List[Rect]
-        KMeansClusterer               | List[Rect] -> List[List[Rect]]
-        UnwarpRegions                 | List[List[Rect]] -> List[Image]
-    PlateClassifier                   | List[List[Rect]] -> List[str]
-        DetectPlate                   | List[str] -> List[str]
+        extract_countours             | Image -> (contours -> hierarchy)
+        FilterCharacterRatio          | contours -> hierarchy -> List[Rect]
+        FilterCharacterSize           | List[Rect] -> List[Rect]
+        ClusterDBSCAN                 | List[Rect] -> List[List[Rect]]
+        horizontality_check           | List[List[Rect]] -> List[List[Rect]]
+        unwarp_regions                | List[List[Rect]] -> List[Image]
+        extract_characters            | List[Image] -> List[List[Image]]
 
-Pipeline2                             | Image -> Image
-    Preprocessor                      | Image -> Image
-        GrayscaleThumbnail            | Image -> Image
-            Thumbnail                 | Image -> Image
-            ToGrayscale               | Image -> Image
-        CLAHE                         | Image -> Image
-        BilateralFilter               | Image -> Image
-        AdaptiveThreshold             | Image -> Image
-    PlateFinder                       | Image -> List[Image]
-        Contours                      | Image -> (contours -> hierarchy)
-        CharacterRatioFilter          | contours -> hierarchy -> List[Rect]
-        SizeFilter                    | List[Rect] -> List[Rect]
-        KMeansClusterer               | List[Rect] -> List[List[Rect]]
-        UnwarpRegions                 | List[List[Rect]] -> List[Image]
-    PlateClassifier                   | List[List[Rect]] -> List[str]
-        ExtractCharacters
-        DetectCharacter

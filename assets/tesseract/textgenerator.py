@@ -1,20 +1,19 @@
-import string
 import itertools
-import random
+import string
+from random import random
 
-def plates():
 
+def all_plates():
     letters = map(''.join, itertools.product(string.ascii_uppercase, repeat=3))
-
-    numbers = ['{0:04d}'.format(i) for i in range(10000)]
+    numbers = list('{0:04d}'.format(i) for i in range(10000))
 
     for l in letters:
         for n in numbers:
             yield l + n
 
 
-with open('por.training_text.txt', 'w') as f:
-    p = list(plates())
-    for plate in random.sample(p, 1000):
-        print(plate, file=f)
+with open('brplate.trained_text', 'w') as f:
+    for plate in all_plates():
+        if random() < 0.0001:
+            print(plate, file=f)
 
